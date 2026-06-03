@@ -1,0 +1,41 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { generateAssessmentPDF } from "@/lib/pdf";
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const assessment = await prisma.assessment.findUnique({
+    where: { id: params.id },
+    include: {
+      createdBy: { select: { name: true, email: true } },
+      reviewedBy: { select: { name: true, email: true } },
+      sections: { orderBy: { sectionKey: "asc" } },
+    },
+  });
+
+  if (!assessment) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const pdfBuffer = await generateAssessmentPDF(assessment as Parameters<typeof generateAssessmentPDF>[0]);
+
+  await prisma.auditLog.create({
+    data: {
+      assessmentId: params.id,
+      userId: session.user.id,
+      action: "EXPORTED",
+    },
+  });
+
+  return new NextResponse(pdfBuffer, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="mica-assessment-${assessment.tokenName.replace(/\s+/g, "-")}.pdf"`,
+    },
+  });
+}

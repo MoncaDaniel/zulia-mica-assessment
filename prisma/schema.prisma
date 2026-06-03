@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ANALYST
+  REVIEWER
+  ADMIN
+}
+
+enum AssessmentStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum ComplianceFlag {
+  PASS
+  REVIEW
+  FAIL
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(ANALYST)
+  createdAt DateTime @default(now())
+
+  createdAssessments  Assessment[] @relation("CreatedBy")
+  reviewedAssessments Assessment[] @relation("ReviewedBy")
+  auditLogs           AuditLog[]
+
+  // NextAuth session models
+  accounts Account[]
+  sessions Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Assessment {
+  id            String           @id @default(cuid())
+  tokenName     String
+  ticker        String?
+  status        AssessmentStatus @default(DRAFT)
+  overallScore  Float?
+  flag          ComplianceFlag?
+  reviewerNotes String?
+
+  // AI layer
+  aiStatus      String           @default("NONE")   // NONE | PENDING | COMPLETED | FAILED
+  aiNarrative   String?          @db.Text            // Claude-generated compliance narrative
+  aiError       String?          @db.Text
+  aiSourceUrls  Json             @default("[]")      // URLs submitted for analysis
+
+  createdById  String
+  createdBy    User   @relation("CreatedBy", fields: [createdById], references: [id])
+
+  reviewedById String?
+  reviewedBy   User?   @relation("ReviewedBy", fields: [reviewedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sections  AssessmentSection[]
+  auditLogs AuditLog[]
+}
+
+model AssessmentSection {
+  id           String    @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  sectionKey   String
+  sectionName  String
+  sectionScore Float?
+  data         Json      @default("{}")
+  completedAt  DateTime?
+
+  // AI layer — per-field suggestions, never used by scoring engine
+  aiData       Json      @default("{}")
+
+  fields AssessmentField[]
+
+  @@unique([assessmentId, sectionKey])
+}
+
+model AssessmentField {
+  id         String            @id @default(cuid())
+  sectionId  String
+  section    AssessmentSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  fieldKey   String
+  fieldValue String
+  score      Float?
+  notes      String?
+
+  @@unique([sectionId, fieldKey])
+}
+
+model AuditLog {
+  id           String     @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+
+  action    String
+  metadata  Json?
+  timestamp DateTime @default(now())
+}
