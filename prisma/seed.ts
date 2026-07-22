@@ -8,9 +8,9 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@zulia.network" },
-    update: {},
+    update: { name: "Guest Admin" },
     create: {
-      name: "Admin User",
+      name: "Guest Admin",
       email: "admin@zulia.network",
       password: passwordHash,
       role: Role.ADMIN,
@@ -19,9 +19,9 @@ async function main() {
 
   const analyst = await prisma.user.upsert({
     where: { email: "analyst@zulia.network" },
-    update: {},
+    update: { name: "Guest Analyst" },
     create: {
-      name: "Ana Analyst",
+      name: "Guest Analyst",
       email: "analyst@zulia.network",
       password: passwordHash,
       role: Role.ANALYST,
@@ -30,9 +30,9 @@ async function main() {
 
   const reviewer = await prisma.user.upsert({
     where: { email: "reviewer@zulia.network" },
-    update: {},
+    update: { name: "Guest Reviewer" },
     create: {
-      name: "Rob Reviewer",
+      name: "Guest Reviewer",
       email: "reviewer@zulia.network",
       password: passwordHash,
       role: Role.REVIEWER,
