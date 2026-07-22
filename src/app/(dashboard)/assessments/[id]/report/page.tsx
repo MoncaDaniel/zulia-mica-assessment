@@ -86,9 +86,33 @@ export default async function ReportPage({ params }: Props) {
             {assessment.reviewedBy && ` · Reviewed by ${assessment.reviewedBy.name}`}
           </p>
         </div>
-        <a href={`/api/assessments/${params.id}/export`} target="_blank" rel="noreferrer">
-          <Button variant="primary" size="md">Export PDF</Button>
-        </a>
+        {process.env.DEMO_MODE === "true" ? (
+          <div className="flex flex-col items-end gap-2">
+            <p className="text-xs text-slate-500">🔒 Full PDF report available on request</p>
+            <div className="flex gap-2">
+              <a
+                href={
+                  "mailto:danielmoncada10@gmail.com" +
+                  "?subject=" + encodeURIComponent("MiCA Assessment Platform — Full Report Request") +
+                  "&body=" + encodeURIComponent(
+                    `Hi Daniel,\n\nI'd like to receive the full PDF report for this MiCA assessment demo (${assessment.tokenName}).\n\n`
+                  )
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Button variant="outline" size="md">📧 Email</Button>
+              </a>
+              <a href="https://www.linkedin.com/in/daniel-moncada-leon/" target="_blank" rel="noreferrer">
+                <Button variant="secondary" size="md">💼 LinkedIn</Button>
+              </a>
+            </div>
+          </div>
+        ) : (
+          <a href={`/api/assessments/${params.id}/export`} target="_blank" rel="noreferrer">
+            <Button variant="primary" size="md">Export PDF</Button>
+          </a>
+        )}
       </div>
 
       {/* Score summary */}

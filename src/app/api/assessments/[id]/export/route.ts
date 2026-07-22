@@ -11,6 +11,19 @@ export async function GET(
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Public demo deployment: full PDF export is gated behind a contact
+  // request rather than disabled outright -- the on-screen report already
+  // shows the complete analysis. See the report page's contact card.
+  if (process.env.DEMO_MODE === "true") {
+    return NextResponse.json(
+      {
+        error: "PDF export is disabled in this public demo.",
+        detail: "The full analysis is visible on the report page. Contact the developer to receive the downloadable PDF.",
+      },
+      { status: 403 },
+    );
+  }
+
   const assessment = await prisma.assessment.findUnique({
     where: { id: params.id },
     include: {
