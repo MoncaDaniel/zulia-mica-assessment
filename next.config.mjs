@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ["@react-pdf/renderer"],
+    serverComponentsExternalPackages: ["@react-pdf/renderer", "pdfjs-dist"],
   },
   // TODO: fix the ~5 pre-existing type errors in auth.ts, pdf.ts, scoring.ts,
   // and the export route's NextResponse(Buffer) call, then remove this.

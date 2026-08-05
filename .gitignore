@@ -32,6 +32,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local-disk whitepaper storage — obsolete, PDFs now live in Postgres (AssessmentPdf)
+/uploads/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

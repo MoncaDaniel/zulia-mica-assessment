@@ -12,6 +12,15 @@ body {
   @apply bg-slate-950 text-slate-100 antialiased;
 }
 
+/* Item reveal animation — used by DocumentSheet checklist items */
+@keyframes item-reveal {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.item-reveal {
+  animation: item-reveal 0.22s ease both;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

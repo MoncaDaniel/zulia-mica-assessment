@@ -90,9 +90,17 @@ model Assessment {
 
   // AI layer
   aiStatus      String           @default("NONE")   // NONE | PENDING | COMPLETED | FAILED
-  aiNarrative   String?          @db.Text            // Claude-generated compliance narrative
+  aiNarrative   String?          @db.Text
   aiError       String?          @db.Text
-  aiSourceUrls  Json             @default("[]")      // URLs submitted for analysis
+  aiSourceUrls  Json             @default("[]")
+
+  // Whitepaper metadata — the actual PDF bytes live in AssessmentPdf, kept out
+  // of this model so routes that JSON-serialize an Assessment can never
+  // accidentally leak the raw file (AssessmentPdf is only ever explicitly
+  // joined by the analyze route, which needs the bytes).
+  pdfName      String?                              // original filename
+  pdfSourceUrl String?                              // set only if ingested via URL fetch, not direct upload
+  pdf          AssessmentPdf?
 
   createdById  String
   createdBy    User   @relation("CreatedBy", fields: [createdById], references: [id])
@@ -105,6 +113,15 @@ model Assessment {
 
   sections  AssessmentSection[]
   auditLogs AuditLog[]
+}
+
+model AssessmentPdf {
+  id           String     @id @default(cuid())
+  assessmentId String     @unique
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  data      Bytes                          // raw PDF bytes
+  createdAt DateTime @default(now())
 }
 
 model AssessmentSection {
