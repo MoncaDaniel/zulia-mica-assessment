@@ -134,7 +134,13 @@ export async function POST(
           emit({ type: "narrative_complete", narrative });
           const score = overallScore(collectedGroups);
           const flag  = complianceFlag(score);
-          prisma.assessment
+          // Must be awaited: this is a serverless function, not a long-running
+          // server. Once the response stream closes (in onDone, right after
+          // this callback returns) the process can be frozen or torn down at
+          // any point, so a fire-and-forget write here has no guarantee of
+          // ever completing -- the client sees "done" while aiStatus stays
+          // PENDING forever.
+          await prisma.assessment
             .update({
               where: { id: params.id },
               data: {
@@ -145,10 +151,10 @@ export async function POST(
                 flag:         flag ?? undefined,
               },
             })
-            .catch(console.error);
+            .catch((e) => console.error(`[analyze] Final status update failed:`, e));
         },
 
-        onDone: (tokensUsed) => {
+        onDone: async (tokensUsed) => {
           const totalMs = Date.now() - routeStart;
           const score   = overallScore(collectedGroups);
           const flag    = complianceFlag(score);
@@ -156,7 +162,9 @@ export async function POST(
           console.log(`[analyze] Complete   · score ${score ?? "N/A"}% ${flag ?? ""} · ${groups}/12 groups · ${(totalMs / 1000).toFixed(1)}s total`);
           console.log(`[analyze] ${SEP}`);
           if (session.user?.id) {
-            prisma.auditLog
+            // Awaited for the same reason as onNarrative's update above --
+            // the function must not be free to terminate before this lands.
+            await prisma.auditLog
               .create({
                 data: {
                   assessmentId: params.id,
@@ -165,10 +173,10 @@ export async function POST(
                   metadata:     { tokensUsed, hadMarketData: !!financials },
                 },
               })
-              .catch(console.error);
+              .catch((e) => console.error(`[analyze] Audit log write failed:`, e));
           }
           emit({ type: "done", tokensUsed });
-          writer.close().catch(() => {});
+          await writer.close().catch(() => {});
         },
       });
 

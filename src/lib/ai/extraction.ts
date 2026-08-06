@@ -166,6 +166,12 @@ async function runBatch(
   // picked up by the post-finalMessage fallback below instead.
   let jsonBuffer = "";
   let emittedCount = 0;
+  // callbacks.onGroup can't be awaited directly inside the (synchronous)
+  // "inputJson" event handler, so its promises are collected here and
+  // awaited before this function returns -- otherwise, in a serverless
+  // function, the process could be torn down before a fire-and-forget
+  // persist call actually finishes.
+  const pendingOnGroup: Array<Promise<void>> = [];
 
   claudeStream.on("inputJson", (delta: string) => {
     jsonBuffer += delta;
@@ -192,7 +198,7 @@ async function runBatch(
               (allNA ? "  (all N/A)" : ""),
             );
             console.log(`[extraction] ┌ ${pad(nextKey, 20)} ${MICA_GROUP_MAP[nextKey]?.label ?? ""}`);
-            void Promise.resolve(callbacks.onGroup(key, data));
+            pendingOnGroup.push(Promise.resolve(callbacks.onGroup(key, data)));
           } catch {
             console.warn(`[extraction] └ ${key}  ✗  parse error`);
           }
@@ -233,6 +239,8 @@ async function runBatch(
       console.warn(`[extraction] └ ${key}  ✗  no data in Claude response`);
     }
   }
+
+  await Promise.all(pendingOnGroup);
 
   return { raw, inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens };
 }
