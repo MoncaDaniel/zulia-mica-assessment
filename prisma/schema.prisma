@@ -181,3 +181,15 @@ model AuditLog {
   metadata  Json?
   timestamp DateTime @default(now())
 }
+
+// Captured from the public registry's "request an assessment" form — no
+// account, no auth. Standalone (no FK to Assessment/User) since the token
+// being asked about may not have any assessment yet. Viewed only via the
+// ADMIN-only /leads page; nothing here is ever exposed publicly.
+model LeadRequest {
+  id        String   @id @default(cuid())
+  tokenName String?
+  email     String
+  phone     String
+  createdAt DateTime @default(now())
+}

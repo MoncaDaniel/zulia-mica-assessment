@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -13,61 +13,54 @@ interface RegistryHit {
   checkedAt: string;
 }
 
-const MIN_QUERY_LENGTH = 2;
+export default function PublicRegistryPage() {
+  const [all, setAll] = useState<RegistryHit[] | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [search, setSearch] = useState("");
 
-function requestAssessmentMailto(tokenName: string) {
-  const subject = "MiCA Assessment Request";
-  const body = tokenName.trim()
-    ? `Hi Daniel,\n\nI checked the public registry and didn't find a completed assessment for "${tokenName.trim()}". I'd like to request one.\n\n`
-    : `Hi Daniel,\n\nI'd like to request a MiCA token assessment.\n\n`;
-  return (
-    "mailto:danielmoncada10@gmail.com" +
-    "?subject=" + encodeURIComponent(subject) +
-    "&body=" + encodeURIComponent(body)
-  );
-}
-
-export default function PublicRegistryCheckPage() {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<RegistryHit[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [searchedFor, setSearchedFor] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
-    const q = query.trim();
-    if (q.length < MIN_QUERY_LENGTH) {
-      setResults(null);
-      setError("");
-      setSearchedFor(null);
-      return;
+    fetch("/api/public/registry/check")
+      .then((res) => res.json())
+      .then((data) => setAll(data.results ?? []))
+      .catch(() => setLoadError("Couldn't load the registry. Try refreshing."));
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!all) return null;
+    const q = search.trim().toLowerCase();
+    if (!q) return all;
+    return all.filter(
+      (r) =>
+        r.tokenName.toLowerCase().includes(q) ||
+        (r.ticker ?? "").toLowerCase().includes(q)
+    );
+  }, [all, search]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setSubmitError("");
+
+    const res = await fetch("/api/public/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, phone, tokenName: search.trim() || undefined }),
+    });
+
+    if (res.ok) {
+      setSubmitted(true);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setSubmitError(data.error?.fieldErrors?.email?.[0] ?? data.error?.fieldErrors?.phone?.[0] ?? "Couldn't submit — check your email and phone number.");
     }
-
-    setLoading(true);
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/public/registry/check?q=${encodeURIComponent(q)}`);
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error ?? "Something went wrong.");
-          setResults(null);
-        } else {
-          setError("");
-          setResults(data.results);
-        }
-      } catch {
-        setError("Couldn't reach the registry. Try again.");
-        setResults(null);
-      } finally {
-        setSearchedFor(q);
-        setLoading(false);
-      }
-    }, 350);
-
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const showEmptyState = searchedFor !== null && !loading && !error && results?.length === 0;
+    setSubmitting(false);
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center px-4 py-16">
@@ -86,37 +79,43 @@ export default function PublicRegistryCheckPage() {
 
         <div className="text-center mb-8">
           <h2 className="text-xl font-semibold text-white">
-            Has this token already been assessed?
+            Tokens we've already assessed
           </h2>
           <p className="text-slate-400 text-sm mt-2 max-w-lg mx-auto">
-            Search by token name or ticker before requesting a new MiCA compliance
-            assessment — if it's already in the registry, you get the answer instantly
-            and we skip a redundant review.
+            Check the list below before requesting a new MiCA compliance assessment —
+            if it's already here, you get the answer instantly and we skip a redundant
+            review.
           </p>
         </div>
 
         <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="e.g. Tether, USDT, MiCA Coin..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Filter by token name or ticker…"
           className="text-base py-3"
-          autoFocus
         />
 
         <div className="mt-6 space-y-3">
-          {loading && (
-            <p className="text-sm text-slate-500 text-center py-6">Searching…</p>
-          )}
-
-          {!loading && error && (
+          {loadError && (
             <p className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded-lg px-3 py-2">
-              {error}
+              {loadError}
             </p>
           )}
 
-          {!loading && !error && results && results.length > 0 && (
+          {!loadError && all === null && (
+            <p className="text-sm text-slate-500 text-center py-6">Loading registry…</p>
+          )}
+
+          {!loadError && all !== null && all.length === 0 && (
+            <div className="text-center py-8 border border-dashed border-slate-800 rounded-xl">
+              <p className="text-slate-300">No tokens published yet</p>
+              <p className="text-sm text-slate-500 mt-1">Check back soon, or request one below.</p>
+            </div>
+          )}
+
+          {!loadError && filtered && filtered.length > 0 && (
             <>
-              {results.map((r, i) => (
+              {filtered.map((r, i) => (
                 <div
                   key={`${r.tokenName}-${i}`}
                   className="bg-slate-900 border border-slate-800 rounded-xl px-5 py-4 flex items-center justify-between"
@@ -134,31 +133,70 @@ export default function PublicRegistryCheckPage() {
                 </div>
               ))}
               <p className="text-xs text-slate-600 text-center pt-2">
-                Status only — contact us for the full report on a listed token.
+                Status only — contact us below for the full report on a listed token.
               </p>
             </>
           )}
 
-          {showEmptyState && (
+          {!loadError && all && all.length > 0 && filtered && filtered.length === 0 && (
             <div className="text-center py-8 border border-dashed border-slate-800 rounded-xl">
-              <p className="text-slate-300">No public record for "{searchedFor}"</p>
-              <p className="text-sm text-slate-500 mt-1 mb-4">
-                It may not have been assessed yet, or the analysis hasn't been published to the
-                registry.
-              </p>
-              <a href={requestAssessmentMailto(searchedFor ?? "")} target="_blank" rel="noreferrer">
-                <Button variant="primary" size="md">Request an assessment</Button>
-              </a>
+              <p className="text-slate-300">No match for "{search}"</p>
+              <p className="text-sm text-slate-500 mt-1">Request it below and we'll take a look.</p>
             </div>
           )}
+        </div>
 
-          {searchedFor === null && !loading && (
-            <p className="text-xs text-slate-600 text-center pt-4">
-              Matches on token name or ticker only — always verify the contract address and chain
-              independently. Only assessments an analyst has published appear here.
-            </p>
+        {/* Contact / request form — replaces the old mailto CTA so we get a
+            phone number too, not just an email client opening on the visitor's
+            device. */}
+        <div className="mt-10 bg-slate-900 border border-slate-800 rounded-xl p-6">
+          {submitted ? (
+            <div className="text-center py-4">
+              <p className="text-white font-medium">Thanks — we'll be in touch.</p>
+              <p className="text-slate-400 text-sm mt-1">
+                We've got your details and will reach out shortly.
+              </p>
+            </div>
+          ) : (
+            <>
+              <h3 className="text-white font-medium">
+                Don't see your token, or want the full report?
+              </h3>
+              <p className="text-slate-400 text-sm mt-1 mb-4">
+                Leave your email and phone number and we'll contact you directly.
+              </p>
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Input
+                    type="email"
+                    placeholder="you@company.com"
+                    label="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  <Input
+                    type="tel"
+                    placeholder="+34 600 000 000"
+                    label="Phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
+                {submitError && <p className="text-sm text-red-400">{submitError}</p>}
+                <Button type="submit" variant="primary" size="md" loading={submitting} className="w-full sm:w-auto">
+                  Request contact
+                </Button>
+              </form>
+            </>
           )}
         </div>
+
+        <p className="text-xs text-slate-600 text-center pt-6">
+          Matches on token name or ticker only — always verify the contract address and
+          chain independently. Only assessments an analyst has published appear here.
+        </p>
       </div>
     </div>
   );
