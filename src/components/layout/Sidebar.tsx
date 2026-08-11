@@ -38,6 +38,18 @@ export function Sidebar() {
         ))}
       </nav>
 
+      <div className="px-3 pb-3">
+        <Link
+          href="/check"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+        >
+          <span className="text-base">🔎</span>
+          Public registry ↗
+        </Link>
+      </div>
+
       <div className="px-6 py-4 border-t border-slate-800 text-xs text-slate-600">
         MiCA Regulation — EU 2023/1114
       </div>

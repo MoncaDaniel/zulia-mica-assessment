@@ -88,6 +88,15 @@ model Assessment {
   flag          ComplianceFlag?
   reviewerNotes String?
 
+  // Opt-in only, defaults to private. Set exclusively via the /registry
+  // toggle route (REVIEWER/ADMIN, APPROVED assessments only) — see
+  // src/app/api/assessments/[id]/registry/route.ts. When true, the token's
+  // name/ticker/flag/date (nothing else — no score, notes, analyst, or
+  // whitepaper data) becomes visible to unauthenticated visitors via the
+  // public "already assessed?" search, so an analyst never accidentally
+  // exposes a confidential client engagement just by finishing a review.
+  listedPublicly Boolean @default(false)
+
   // AI layer
   aiStatus      String           @default("NONE")   // NONE | PENDING | COMPLETED | FAILED
   aiNarrative   String?          @db.Text
@@ -113,6 +122,10 @@ model Assessment {
 
   sections  AssessmentSection[]
   auditLogs AuditLog[]
+
+  @@index([tokenName])
+  @@index([ticker])
+  @@index([listedPublicly, status])
 }
 
 model AssessmentPdf {
