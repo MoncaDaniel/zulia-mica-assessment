@@ -1,28 +1,17 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { FlagBadge } from "@/components/dashboard/StatusBadge";
 import { formatDate } from "@/lib/utils";
-
-interface RegistryHit {
-  tokenName: string;
-  ticker: string | null;
-  flag: string | null;
-  checkedAt: string;
-}
+import { RegistryModal, type RegistryHit } from "@/components/public/RegistryModal";
 
 export default function PublicRegistryPage() {
   const [all, setAll] = useState<RegistryHit[] | null>(null);
   const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
-
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState("");
+  const [modalToken, setModalToken] = useState<RegistryHit | null>(null);
+  const [showGenericModal, setShowGenericModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/public/registry/check")
@@ -42,39 +31,14 @@ export default function PublicRegistryPage() {
     );
   }, [all, search]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setSubmitError("");
-
-    const res = await fetch("/api/public/leads", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, phone, tokenName: search.trim() || undefined }),
-    });
-
-    if (res.ok) {
-      setSubmitted(true);
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setSubmitError(data.error?.fieldErrors?.email?.[0] ?? data.error?.fieldErrors?.phone?.[0] ?? "Couldn't submit — check your email and phone number.");
-    }
-    setSubmitting(false);
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center px-4 py-16">
       <div className="w-full max-w-2xl">
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <h1 className="font-display font-bold text-2xl text-white">
-              Zulia <span className="text-brand-500">MiCA</span>
-            </h1>
-            <p className="text-slate-500 text-sm mt-0.5">Public token registry</p>
-          </div>
-          <Link href="/login" className="text-sm text-slate-400 hover:text-slate-200 transition-colors">
-            Analyst sign in →
-          </Link>
+        <div className="mb-10">
+          <h1 className="font-display font-bold text-2xl text-white">
+            Zulia <span className="text-brand-500">MiCA</span>
+          </h1>
+          <p className="text-slate-500 text-sm mt-0.5">Public token registry</p>
         </div>
 
         <div className="text-center mb-8">
@@ -82,9 +46,8 @@ export default function PublicRegistryPage() {
             Tokens we've already assessed
           </h2>
           <p className="text-slate-400 text-sm mt-2 max-w-lg mx-auto">
-            Check the list below before requesting a new MiCA compliance assessment —
-            if it's already here, you get the answer instantly and we skip a redundant
-            review.
+            Click a token for a preview of the analysis, or check the list before
+            requesting a new one — if it's already here, you get the answer instantly.
           </p>
         </div>
 
@@ -113,30 +76,26 @@ export default function PublicRegistryPage() {
             </div>
           )}
 
-          {!loadError && filtered && filtered.length > 0 && (
-            <>
-              {filtered.map((r, i) => (
-                <div
-                  key={`${r.tokenName}-${i}`}
-                  className="bg-slate-900 border border-slate-800 rounded-xl px-5 py-4 flex items-center justify-between"
-                >
-                  <div>
-                    <p className="font-medium text-white">
-                      {r.tokenName}
-                      {r.ticker && <span className="ml-2 text-xs text-slate-500">{r.ticker}</span>}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Last reviewed {formatDate(r.checkedAt)}
-                    </p>
-                  </div>
-                  <FlagBadge flag={r.flag} />
+          {!loadError &&
+            filtered &&
+            filtered.map((r, i) => (
+              <button
+                key={`${r.tokenName}-${i}`}
+                onClick={() => setModalToken(r)}
+                className="w-full text-left bg-slate-900 border border-slate-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-slate-700 hover:bg-slate-800/50 transition-colors"
+              >
+                <div>
+                  <p className="font-medium text-white">
+                    {r.tokenName}
+                    {r.ticker && <span className="ml-2 text-xs text-slate-500">{r.ticker}</span>}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Last reviewed {formatDate(r.checkedAt)}
+                  </p>
                 </div>
-              ))}
-              <p className="text-xs text-slate-600 text-center pt-2">
-                Status only — contact us below for the full report on a listed token.
-              </p>
-            </>
-          )}
+                <FlagBadge flag={r.flag} />
+              </button>
+            ))}
 
           {!loadError && all && all.length > 0 && filtered && filtered.length === 0 && (
             <div className="text-center py-8 border border-dashed border-slate-800 rounded-xl">
@@ -146,51 +105,10 @@ export default function PublicRegistryPage() {
           )}
         </div>
 
-        {/* Contact / request form — replaces the old mailto CTA so we get a
-            phone number too, not just an email client opening on the visitor's
-            device. */}
-        <div className="mt-10 bg-slate-900 border border-slate-800 rounded-xl p-6">
-          {submitted ? (
-            <div className="text-center py-4">
-              <p className="text-white font-medium">Thanks — we'll be in touch.</p>
-              <p className="text-slate-400 text-sm mt-1">
-                We've got your details and will reach out shortly.
-              </p>
-            </div>
-          ) : (
-            <>
-              <h3 className="text-white font-medium">
-                Don't see your token, or want the full report?
-              </h3>
-              <p className="text-slate-400 text-sm mt-1 mb-4">
-                Leave your email and phone number and we'll contact you directly.
-              </p>
-              <form onSubmit={handleSubmit} className="space-y-3">
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <Input
-                    type="email"
-                    placeholder="you@company.com"
-                    label="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                  <Input
-                    type="tel"
-                    placeholder="+34 600 000 000"
-                    label="Phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                  />
-                </div>
-                {submitError && <p className="text-sm text-red-400">{submitError}</p>}
-                <Button type="submit" variant="primary" size="md" loading={submitting} className="w-full sm:w-auto">
-                  Request contact
-                </Button>
-              </form>
-            </>
-          )}
+        <div className="mt-8 text-center">
+          <Button variant="outline" size="md" onClick={() => setShowGenericModal(true)}>
+            Don't see your token? Request an assessment
+          </Button>
         </div>
 
         <p className="text-xs text-slate-600 text-center pt-6">
@@ -198,6 +116,13 @@ export default function PublicRegistryPage() {
           chain independently. Only assessments an analyst has published appear here.
         </p>
       </div>
+
+      {modalToken && (
+        <RegistryModal token={modalToken} onClose={() => setModalToken(null)} />
+      )}
+      {showGenericModal && (
+        <RegistryModal defaultTokenName={search} onClose={() => setShowGenericModal(false)} />
+      )}
     </div>
   );
 }
