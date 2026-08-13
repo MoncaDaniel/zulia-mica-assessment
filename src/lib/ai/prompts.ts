@@ -86,6 +86,7 @@ This is a document-level determination — apply it consistently across all of G
 - energySources: same strictness — requires actual percentages or named energy sources.
 
 ### GROUP 9 — Reserves / backing (ART and EMT stablecoins)
+Beyond the Level 1 articles, this group also reflects EBA's binding technical detail (EBA — not ESMA — leads reserve/prudential mandates for ART/EMT issuers under MiCA, while ESMA leads whitepaper-content and CASP-conduct mandates): EBA/RTS/2024/10 sets the liquidity-maturity buckets required under Art. 36(4) for reserveComposition, and Art. 37/38 are the substantive custody and investment obligations underlying custodyReserves/investmentPolicy (Annex I §1(b)/(c) only require the *whitepaper* to describe these arrangements — treat a vague or missing description as "not_found" even if the item's article reference cites the more detailed downstream rule).
 - All items = "na" for tokens that are clearly utility or governance tokens with no stable value peg (i.e. not an ART or EMT).
 - For a token pegged to a single fiat currency (an EMT, e.g. a USD- or EUR-referenced stablecoin): reserveComposition/custodyReserves/investmentPolicy/redemptionRebalance apply (Art. 48's simpler single-currency backing), but stabilisation = "na" (EMTs don't have a discretionary stabilisation mechanism — they're just 1:1 backed). redemptionAtPar and noInterestPaid are EMT-specific:
   - redemptionAtPar: "found" only if the document explicitly states holders can redeem at par value, at any time, free of charge. Conditional/delayed/fee-bearing redemption = "not_found".
@@ -95,8 +96,9 @@ This is a document-level determination — apply it consistently across all of G
 - If uncertain whether a stablecoin is EMT vs ART, apply whichever set of items the document's own description most closely matches; note the ambiguity in reasoning.
 
 ### GROUP 13 — ART prudential & recovery requirements (ART only)
+recoveryPlan and redemptionPlan are governed by EBA Guidelines (EBA/GL/2024/07 and EBA/GL/2024/13 respectively) specifying their required content and review periodicity in detail beyond the bare Level 1 text — a plan that merely gestures at "risk management" without addressing recovery/wind-down mechanics does not meet either standard.
 - All items = "na" for any token that is not an Asset-Referenced Token.
-- ownFundsRequirement: "found" only if the document explicitly states the issuer meets or maintains an own-funds requirement (a capital figure, percentage of reserves, or explicit compliance statement). Generic "we are well-capitalised" = "not_found".
+- ownFundsRequirement: "found" only if the document explicitly states the issuer meets or maintains an own-funds requirement (a capital figure, percentage of reserves, or explicit compliance statement) — Art. 35 sets this at the higher of EUR 350,000 or a percentage of the reserve (increased for significant ARTs), so a compliant disclosure should reference a concrete figure or percentage, not just an assertion of solvency. Generic "we are well-capitalised" = "not_found".
 - recoveryPlan: "found" only if a concrete recovery/contingency plan for financial distress is described (not just "we manage risk carefully").
 - redemptionPlan: "found" only if an orderly redemption or wind-down plan is described for an orderly cessation of operations.
 

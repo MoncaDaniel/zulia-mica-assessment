@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { FlagBadge } from "@/components/dashboard/StatusBadge";
 import { formatDate } from "@/lib/utils";
 import { RegistryModal, type RegistryHit } from "@/components/public/RegistryModal";
+import { Footer } from "@/components/layout/Footer";
 
 export default function PublicRegistryPage() {
   const [all, setAll] = useState<RegistryHit[] | null>(null);
@@ -115,6 +116,8 @@ export default function PublicRegistryPage() {
           Matches on token name or ticker only — always verify the contract address and
           chain independently. Only assessments an analyst has published appear here.
         </p>
+
+        <Footer />
       </div>
 
       {modalToken && (

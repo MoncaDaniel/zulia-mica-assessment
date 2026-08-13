@@ -142,9 +142,9 @@ export const MICA_GROUPS: MicaGroup[] = [
     scope: "Stablecoins — Asset-Referenced Tokens (ART) or E-Money Tokens (EMT) only",
     weight: 0.04,
     items: [
-      { key: "reserveComposition", label: "Composition of the reserve asset basket (ART) or reserve currency (EMT)", articleRef: "Art. 19(1)(a) / Art. 48" },
-      { key: "custodyReserves",    label: "Custody and segregation arrangements for reserve assets",                  articleRef: "Art. 19(1)(b) / Art. 48" },
-      { key: "investmentPolicy",   label: "Investment policy governing the reserve (ART) or safe/liquid asset placement (EMT)", articleRef: "Art. 19(1)(c) / Art. 48" },
+      { key: "reserveComposition", label: "Composition of the reserve asset basket (ART) or reserve currency (EMT)", articleRef: "Art. 19(1)(a) / 48 · EBA/RTS/2024/10 (Art. 36(4) liquidity)" },
+      { key: "custodyReserves",    label: "Custody and segregation arrangements for reserve assets",                  articleRef: "Art. 19(1)(b) / 48 · Art. 37 (custody obligation)" },
+      { key: "investmentPolicy",   label: "Investment policy governing the reserve (ART) or safe/liquid asset placement (EMT)", articleRef: "Art. 19(1)(c) / 48 · Art. 38 (investment of reserve)" },
       { key: "stabilisation",      label: "Description of the stabilisation mechanism (ART)",                        articleRef: "Art. 19(1)(d)" },
       { key: "redemptionRebalance",label: "Redemption and rebalancing procedures",                                   articleRef: "Art. 19(1)(e) / Art. 49" },
       { key: "redemptionAtPar",    label: "EMT redeemable at par value, at any time, free of charge",                 articleRef: "Art. 49" },
@@ -159,8 +159,8 @@ export const MICA_GROUPS: MicaGroup[] = [
     weight: 0.05,
     items: [
       { key: "ownFundsRequirement", label: "Own funds requirement met and disclosed",           articleRef: "Art. 35" },
-      { key: "recoveryPlan",        label: "Recovery plan for financial distress in place",      articleRef: "Art. 46" },
-      { key: "redemptionPlan",      label: "Orderly redemption / wind-down plan in place",        articleRef: "Art. 47" },
+      { key: "recoveryPlan",        label: "Recovery plan for financial distress in place",      articleRef: "Art. 46 · EBA/GL/2024/07" },
+      { key: "redemptionPlan",      label: "Orderly redemption / wind-down plan in place",        articleRef: "Art. 47 · EBA/GL/2024/13" },
     ],
   },
   {
