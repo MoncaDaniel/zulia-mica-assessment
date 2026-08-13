@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { MICA_GROUPS } from "@/lib/ai/mica-groups";
-import { overallScore as calcWeightedScore } from "@/lib/ai/scoring";
+import { overallScore as calcWeightedScore, noIssuerDetected as deriveNoIssuer } from "@/lib/ai/scoring";
 import type { MicaGroupData, MicaItemFinding } from "@/lib/ai/types";
 import type { CoinFinancials } from "@/lib/ai/coin-data";
 
@@ -313,10 +313,10 @@ function FinancialCard({ f }: { f: CoinFinancials }) {
 
 // ── Score gauge ───────────────────────────────────────────────────────────────
 
-function ScoreGauge({ score, isRunning }: { score: number | null; isRunning: boolean }) {
+function ScoreGauge({ score, isRunning, exempt }: { score: number | null; isRunning: boolean; exempt: boolean }) {
   const pct   = score ?? 0;
-  const color = pct >= 75 ? "#16a34a" : pct >= 50 ? "#d97706" : "#dc2626";
-  const label = pct >= 75 ? "PASS" : pct >= 50 ? "REVIEW" : "FAIL";
+  const color = exempt ? "#0284c7" : pct >= 75 ? "#16a34a" : pct >= 50 ? "#d97706" : "#dc2626";
+  const label = exempt ? "EXEMPT" : pct >= 75 ? "PASS" : pct >= 50 ? "REVIEW" : "FAIL";
 
   // SVG circle gauge — r=28, circumference = 2πr ≈ 175.9
   const r    = 28;
@@ -333,16 +333,18 @@ function ScoreGauge({ score, isRunning }: { score: number | null; isRunning: boo
           <circle
             cx="40" cy="40" r={r}
             fill="none"
-            stroke={score !== null ? color : "#e7e5e4"}
+            stroke={score !== null || exempt ? color : "#e7e5e4"}
             strokeWidth="6"
             strokeLinecap="round"
-            strokeDasharray={`${dash} ${circ}`}
+            strokeDasharray={exempt ? `${circ} ${circ}` : `${dash} ${circ}`}
             style={{ transition: "stroke-dasharray 0.8s ease" }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {isRunning && score === null ? (
             <span className="text-[10px] text-stone-400 animate-pulse">—</span>
+          ) : exempt ? (
+            <span className="text-[10px] font-bold leading-none" style={{ color }}>N/A</span>
           ) : (
             <span className="text-xl font-bold leading-none" style={{ color: score !== null ? color : "#a8a29e" }}>
               {score ?? "—"}
@@ -354,7 +356,7 @@ function ScoreGauge({ score, isRunning }: { score: number | null; isRunning: boo
         <p className="text-[9px] font-mono uppercase tracking-widest text-stone-400">
           Disclosure
         </p>
-        {score !== null && (
+        {(score !== null || exempt) && (
           <p className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{ color }}>
             {label}
           </p>
@@ -388,16 +390,13 @@ export function DocumentSheet({
   const totalGroups     = MICA_GROUPS.length;
   const compliancePct   = calcWeightedScore(groups);
 
-  // Derived, not stored separately: Group 1 (Offeror) comes back entirely
-  // "na" exactly when the no-issuer cascade in the extraction prompt fired
-  // (see prompts.ts) — i.e. Claude determined no identifiable legal entity
-  // created or controls this asset. Surface that as a finding rather than
-  // letting the score just quietly exclude three groups with no explanation.
-  const offerorGroup = groups["g01_offeror"];
-  const noIssuerDetected =
-    !!offerorGroup &&
-    Object.keys(offerorGroup).length > 0 &&
-    Object.values(offerorGroup).every((f) => f.status === "na");
+  // Derived, not stored separately: true exactly when the no-issuer cascade
+  // in the extraction prompt fired (see prompts.ts) — i.e. Claude determined
+  // no identifiable legal entity created or controls this asset, so every
+  // group came back "na" and overallScore is null. Surfaced as a finding
+  // (and as the EXEMPT flag, stored on Assessment.flag) rather than letting
+  // the score just quietly go blank with no explanation.
+  const noIssuerFound = deriveNoIssuer(groups);
 
   const handleStreamEvent = useCallback((event: StreamEvent) => {
     switch (event.type) {
@@ -537,7 +536,7 @@ export function DocumentSheet({
               </div>
 
               {/* Score gauge */}
-              <ScoreGauge score={compliancePct} isRunning={isRunning} />
+              <ScoreGauge score={compliancePct} isRunning={isRunning} exempt={noIssuerFound} />
             </div>
           </div>
 
@@ -555,7 +554,7 @@ export function DocumentSheet({
           )}
 
           {/* No-identifiable-issuer notice — explains why Groups 1/2/4 are excluded */}
-          {noIssuerDetected && (
+          {noIssuerFound && (
             <div className="mb-6 p-4 bg-sky-50 border border-sky-200 rounded-sm">
               <p className="text-xs font-bold uppercase tracking-wide text-sky-700">
                 No identifiable issuer detected

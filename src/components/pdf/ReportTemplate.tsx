@@ -142,6 +142,7 @@ function scoreColor(score: number | null): string {
 function flagColor(flag: string | null): string {
   if (flag === "PASS") return "#22c55e";
   if (flag === "REVIEW") return "#f59e0b";
+  if (flag === "EXEMPT") return "#0ea5e9";
   return "#ef4444";
 }
 
@@ -371,8 +372,9 @@ export function ReportDocument({
           <Text style={{ fontFamily: "Helvetica-Bold", marginBottom: 6 }}>Assessment Outcome</Text>
           <Text style={{ fontSize: 8, lineHeight: 1.6, color: "#475569" }}>
             This MiCA token assessment has been completed in accordance with EU Regulation 2023/1114 (Markets in Crypto-Assets).
-            The token {tokenName}{ticker ? ` (${ticker})` : ""} received an overall compliance score of{" "}
-            {overallScore != null ? `${Math.round(overallScore)}%` : "N/A"}, resulting in a {flag ?? "pending"} classification.
+            {flag === "EXEMPT"
+              ? `${tokenName}${ticker ? ` (${ticker})` : ""} has no identifiable issuer and falls outside MiCA's Title II whitepaper-disclosure perimeter by design (Art. 4(3) / Recital 22) — no compliance score applies.`
+              : `The token ${tokenName}${ticker ? ` (${ticker})` : ""} received an overall compliance score of ${overallScore != null ? `${Math.round(overallScore)}%` : "N/A"}, resulting in a ${flag ?? "pending"} classification.`}
           </Text>
         </View>
 
@@ -393,6 +395,14 @@ export function ReportDocument({
           <Text style={{ fontSize: 8, lineHeight: 1.6, color: "#475569" }}>
             The token does not meet minimum MiCA compliance thresholds. Recommended actions: (1) Do not proceed with listing until critical gaps are resolved;
             (2) Inform the issuer of specific deficiencies; (3) Request a full remediation plan; (4) Re-assess after material improvements are confirmed.
+          </Text>
+        )}
+        {flag === "EXEMPT" && (
+          <Text style={{ fontSize: 8, lineHeight: 1.6, color: "#475569" }}>
+            No whitepaper-disclosure remediation applies — this is not a compliance failure. Recommended actions: (1) If offering trading, custody, or
+            brokerage services on this asset to EU clients, confirm the provider holds MiCA CASP authorisation (Title V); (2) Re-assess if the asset later
+            gains an identifiable issuer (e.g. a wrapped or issuer-controlled derivative version), since that would not qualify for this exemption;
+            (3) No annual re-assessment is required on this basis alone.
           </Text>
         )}
 

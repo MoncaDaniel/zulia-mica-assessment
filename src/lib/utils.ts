@@ -28,6 +28,7 @@ export function flagToColor(flag: string | null | undefined): string {
     case "PASS": return "bg-green-900/40 text-green-300 border-green-700";
     case "REVIEW": return "bg-amber-900/40 text-amber-300 border-amber-700";
     case "FAIL": return "bg-red-900/40 text-red-300 border-red-700";
+    case "EXEMPT": return "bg-sky-900/40 text-sky-300 border-sky-700";
     default: return "bg-slate-800 text-slate-400 border-slate-700";
   }
 }

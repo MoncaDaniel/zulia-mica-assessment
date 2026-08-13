@@ -134,7 +134,7 @@ export async function POST(
         onNarrative: async (narrative) => {
           emit({ type: "narrative_complete", narrative });
           const score = overallScore(collectedGroups);
-          const flag  = complianceFlag(score);
+          const flag  = complianceFlag(score, collectedGroups);
           // Must be awaited: this is a serverless function, not a long-running
           // server. Once the response stream closes (in onDone, right after
           // this callback returns) the process can be frozen or torn down at
@@ -158,7 +158,7 @@ export async function POST(
         onDone: async (tokensUsed) => {
           const totalMs = Date.now() - routeStart;
           const score   = overallScore(collectedGroups);
-          const flag    = complianceFlag(score);
+          const flag    = complianceFlag(score, collectedGroups);
           const groups  = Object.keys(collectedGroups).length;
           console.log(`[analyze] Complete   · score ${score ?? "N/A"}% ${flag ?? ""} · ${groups}/${MICA_GROUPS.length} groups · ${(totalMs / 1000).toFixed(1)}s total`);
           console.log(`[analyze] ${SEP}`);

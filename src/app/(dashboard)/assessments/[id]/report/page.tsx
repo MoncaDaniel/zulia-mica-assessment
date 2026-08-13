@@ -7,7 +7,7 @@ import { StatusBadge, FlagBadge } from "@/components/dashboard/StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { MICA_GROUPS } from "@/lib/ai/mica-groups";
-import { scoreGroup } from "@/lib/ai/scoring";
+import { scoreGroup, noIssuerDetected } from "@/lib/ai/scoring";
 import type { MicaGroupData, MicaItemFinding } from "@/lib/ai/types";
 import { formatDate, formatScore, scoreToColor, cn } from "@/lib/utils";
 
@@ -72,18 +72,17 @@ export default async function ReportPage({ params }: Props) {
 
   if (!assessment) notFound();
 
-  const groupMap = new Map(assessment.sections.map((s) => [s.sectionKey, s.aiData as MicaGroupData | null]));
+  const groupMap: Partial<Record<string, MicaGroupData>> = {};
+  for (const s of assessment.sections) {
+    if (s.aiData) groupMap[s.sectionKey] = s.aiData as unknown as MicaGroupData;
+  }
 
   const groupsWithScores = MICA_GROUPS.map((def) => {
-    const data = groupMap.get(def.key) ?? null;
+    const data = groupMap[def.key] ?? null;
     return { def, data, score: data ? scoreGroup(data) : null };
   });
 
-  const offerorData = groupMap.get("g01_offeror");
-  const noIssuerDetected =
-    !!offerorData &&
-    Object.keys(offerorData).length > 0 &&
-    Object.values(offerorData).every((f) => f.status === "na");
+  const isExempt = noIssuerDetected(groupMap);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -186,7 +185,7 @@ export default async function ReportPage({ params }: Props) {
             </div>
           </div>
 
-          {noIssuerDetected && (
+          {isExempt && (
             <div className="mt-4 p-4 bg-sky-900/20 border border-sky-800 rounded-lg">
               <p className="text-sm font-medium text-sky-300 mb-1">No identifiable issuer detected</p>
               <p className="text-sm text-sky-200">

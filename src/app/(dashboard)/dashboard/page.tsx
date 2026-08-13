@@ -24,6 +24,7 @@ export default async function DashboardPage() {
     pass: assessments.filter((a) => a.flag === "PASS").length,
     review: assessments.filter((a) => a.flag === "REVIEW").length,
     fail: assessments.filter((a) => a.flag === "FAIL").length,
+    exempt: assessments.filter((a) => a.flag === "EXEMPT").length,
     submitted: assessments.filter((a) => a.status === "SUBMITTED").length,
     listed: assessments.filter((a) => a.listedPublicly).length,
   };
@@ -48,12 +49,13 @@ export default async function DashboardPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
         {[
           { label: "Total", value: stats.total, color: "text-slate-300" },
           { label: "Pass", value: stats.pass, color: "text-green-400" },
           { label: "Review", value: stats.review, color: "text-amber-400" },
           { label: "Fail", value: stats.fail, color: "text-red-400" },
+          { label: "Exempt", value: stats.exempt, color: "text-sky-400" },
           { label: "Awaiting Review", value: stats.submitted, color: "text-blue-400" },
           { label: "In Public Registry", value: stats.listed, color: "text-brand-500" },
         ].map((stat) => (

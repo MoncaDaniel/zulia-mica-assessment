@@ -24,6 +24,10 @@ enum ComplianceFlag {
   PASS
   REVIEW
   FAIL
+  // No identifiable issuer/offeror (Art. 4(3) / Recital 22) — the Title II
+  // whitepaper-disclosure obligations this tool checks never attached to
+  // this asset in the first place, so no PASS/REVIEW/FAIL verdict applies.
+  EXEMPT
 }
 
 model User {

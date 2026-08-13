@@ -31,16 +31,16 @@ When in doubt between "found" and "not_found", choose "not_found" with high conf
 
 ## Per-item rubrics (apply these strictly)
 
-### No-issuer cascade — read this before Groups 1, 2, and 4
+### No-issuer cascade — read this before scoring ANY group
 
-MiCA's Title II issuer-disclosure obligations (Art. 6 whitepaper, Annex I §1-2, §4) legally require an *issuer* to exist in the first place. Per Article 4(3) and Recital 22, a crypto-asset with **no identifiable issuer** — e.g. a protocol whose tokens are created automatically as mining/staking/validation rewards, with no pre-mine, no company or foundation treasury, and no natural or legal person who controls issuance (Bitcoin is the canonical example) — is exempt from those obligations entirely. There is no one who could have disclosed this information, so its absence is not a compliance gap.
+MiCA's Title II whitepaper obligations (Art. 6, Annex I) — the entire basis for every group in this checklist — legally require an *issuer* to exist in the first place: Art. 6 obliges "the offeror or person seeking admission to trading" to draw up and publish a whitepaper. Per Article 4(3) and Recital 22, a crypto-asset with **no identifiable issuer** — e.g. a protocol whose tokens are created automatically as mining/staking/validation rewards, with no pre-mine, no company or foundation treasury, and no natural or legal person who controls issuance (Bitcoin is the canonical example) — is exempt from the *entire* whitepaper-disclosure regime, not just the parts that ask for the issuer's name. There is nobody who was ever required to publish a whitepaper at all, so a 2008-style technical paper failing to include a MiCA-format disclaimer, a formal risk-factors section, or kWh-per-transaction energy data is not a disclosure gap — none of Annex I was ever a legal obligation for this document to satisfy.
 
-Before scoring Groups 1, 2, or 4, first determine: **does any specific legal entity, company, foundation, or natural person appear anywhere in the document or enrichment context as having created, controlled, or issued this crypto-asset?**
+Before scoring **anything**, first determine: **does any specific legal entity, company, foundation, or natural person appear anywhere in the document or enrichment context as having created, controlled, or issued this crypto-asset?**
 
-- If **no** — mark **every item in Groups 1, 2, and 4** as "na", with reasoning stating "No identifiable issuer — Article 4(3)/Recital 22 exemption applies." Do **not** mark these items "not_found"; the obligation itself does not attach, so nothing was failed to be disclosed. This overrides the per-item rubrics below for these three groups.
-- If **yes** — an issuer/offeror does exist — score Groups 1, 2, and 4 normally using the per-item rubrics below. A real issuer that simply omits required details (e.g. no registered address given) is correctly "not_found", not "na".
+- If **no** — mark **every item in every group (1 through 13)** as "na", with reasoning stating "No identifiable issuer — Article 4(3)/Recital 22 exemption from the entire Title II whitepaper regime applies." Do **not** mark any item "not_found" on the theory that the document merely omits something required — nothing was required. This overrides every per-item rubric below, including Groups 3, 5-8, 10, 11, and 12 which have no issuer-specific wording of their own but are still whitepaper-content requirements that this exemption removes entirely.
+- If **yes** — an issuer/offeror does exist — score every group normally using the per-item rubrics below (subject to each group's own applicability rules, e.g. Group 9/13 still only apply to stablecoins/ART). A real issuer that simply omits required details (e.g. no registered address given, no risk-factors section) is correctly "not_found", not "na" — this exemption is about the *absence of an issuer*, not about document quality.
 
-This is a document-level determination — apply it consistently across all of Groups 1, 2, and 4 rather than deciding item-by-item.
+This is a single document-level determination — apply it consistently across the whole checklist rather than deciding group-by-group or item-by-item.
 
 ### GROUP 1 — Offeror identification
 (Only reached if an issuer/offeror was determined to exist — see cascade above.)
@@ -56,6 +56,7 @@ This is a document-level determination — apply it consistently across all of G
 - Apply same standards as Group 1. If issuer and offeror are the same entity, all items = "na".
 
 ### GROUP 3 — Project description
+(Also gated by the no-issuer cascade above — "na" for all items if no issuer/offeror exists.)
 - supplyOrCap: "found" only if a specific number (e.g. "21,000,000 BTC") or an explicit statement that supply is unlimited is present. "the supply is managed" or "deflationary" alone = "not_found".
 - smartContractAddr: "found" if a blockchain address (0x... or similar) is present. "deployed on Ethereum" alone = "not_found".
 - auditResults: "found" if a named auditor AND date/report reference is present. "audited" with no details = "not_found".

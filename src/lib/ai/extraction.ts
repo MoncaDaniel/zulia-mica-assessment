@@ -2,9 +2,9 @@ import { anthropic, AI_MODEL } from "./client";
 import { SYSTEM_PROMPT } from "./prompts";
 import { MICA_GROUPS, GROUP_STREAM_ORDER, MICA_GROUP_MAP } from "./mica-groups";
 import { extractPdfContent } from "./pdf-extract";
-import { scoreGroup, overallScore, complianceFlag } from "./scoring";
+import { scoreGroup, overallScore, complianceFlag, noIssuerDetected } from "./scoring";
 import type { MicaGroupData, MicaItemFinding, MicaAnalysisResult } from "./types";
-export { scoreGroup, overallScore, complianceFlag } from "./scoring";
+export { scoreGroup, overallScore, complianceFlag, noIssuerDetected } from "./scoring";
 
 // ── Logging helpers ───────────────────────────────────────────────────────────
 const SEP = "━".repeat(56);
@@ -245,6 +245,33 @@ async function runBatch(
   return { raw, inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens };
 }
 
+// ── Exempt narrative — deterministic, not model-generated ──────────────────────
+// For a no-issuer asset there's nothing case-specific to summarise: the legal
+// conclusion is the same regardless of which decentralized asset this is, so
+// a template is more reliable than an open-ended Claude call for something
+// this legally load-bearing (no risk of the model drifting into "risky" or
+// "non-compliant" framing), and it costs zero extra tokens.
+function exemptNarrative(tokenName: string): string {
+  return (
+    `${tokenName} does not have an identifiable issuer or offeror — it appears to be created and ` +
+    `distributed in a fully decentralized manner (e.g. mining, staking, or validation rewards), with no ` +
+    `company, foundation, or natural person controlling its issuance. Under MiCA Article 4(3) and Recital ` +
+    `22, the Title II whitepaper-publication and disclosure obligations this checklist is built on do not ` +
+    `attach to a crypto-asset in this position — there is no one who could have complied with them. This ` +
+    `is a deliberate exemption, not a compliance failure: ${tokenName} is not illegal or unregulated in a ` +
+    `legal-vacuum sense, it simply falls outside the issuer-disclosure perimeter by design.\n\n` +
+    `The regulatory exposure that does exist sits with intermediaries, not the asset itself. Any exchange, ` +
+    `custodian, or broker offering services on ${tokenName} to EU clients must hold CASP authorisation ` +
+    `under MiCA Title V — since 1 July 2026, only MiCA-licensed firms may provide such services in the EU, ` +
+    `and the transitional "grandfathering" regime for firms operating under prior national frameworks has ` +
+    `lapsed. ESMA does not regulate ${tokenName} as an asset; its role is supervisory coordination among ` +
+    `national competent authorities and, notably, 2025 guidance that tightened the "reverse solicitation" ` +
+    `exemption non-EU firms had used to avoid licensing.\n\n` +
+    `No compliance score is computed for this assessment, since MiCA's whitepaper-disclosure checklist was ` +
+    `never a legal obligation this asset needed to satisfy.`
+  );
+}
+
 // ── Narrative — small separate call over the already-collected findings ────────
 // Kept out of the batch calls entirely: it needs the full picture (all 13
 // groups) to write a coherent summary, so it can only run after every batch
@@ -256,8 +283,12 @@ async function generateNarrative(
   tokenName: string,
   groupMap: Partial<Record<string, MicaGroupData>>,
 ): Promise<{ narrative: string; inputTokens: number; outputTokens: number }> {
+  if (noIssuerDetected(groupMap)) {
+    return { narrative: exemptNarrative(tokenName), inputTokens: 0, outputTokens: 0 };
+  }
+
   const score = overallScore(groupMap);
-  const flag  = complianceFlag(score);
+  const flag  = complianceFlag(score, groupMap);
 
   const findingsSummary = GROUP_STREAM_ORDER.map((key) => {
     const data = groupMap[key];
@@ -380,7 +411,7 @@ export async function runMicaExtractionStream(
   const totEmpty    = allGroups.reduce((s, g) => s + groupSummary(g).empty, 0);
   const groupMap    = Object.fromEntries(GROUP_STREAM_ORDER.map((k) => [k, raw[k] as MicaGroupData | undefined]).filter(([, v]) => v)) as Partial<Record<string, MicaGroupData>>;
   const score       = overallScore(groupMap);
-  const flag        = complianceFlag(score);
+  const flag        = complianceFlag(score, groupMap);
 
   console.log(`[extraction] ${SEP}`);
   console.log(`[extraction] Score     : ${score !== null ? `${score}% ${flag}` : "N/A"}  ·  ${totFound} found · ${totNotFound} not_found · ${totNA} n/a${totEmpty ? ` · ${totEmpty} unknown` : ""}`);

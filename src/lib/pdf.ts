@@ -2,7 +2,7 @@ import React from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ReportDocument } from "@/components/pdf/ReportTemplate";
 import { MICA_GROUPS } from "@/lib/ai/mica-groups";
-import { scoreGroup } from "@/lib/ai/scoring";
+import { scoreGroup, noIssuerDetected } from "@/lib/ai/scoring";
 import type { MicaGroupData } from "@/lib/ai/types";
 import { formatDate } from "@/lib/utils";
 
@@ -25,9 +25,13 @@ export interface PDFAssessmentData {
 }
 
 export async function generateAssessmentPDF(assessment: PDFAssessmentData): Promise<Buffer> {
+  const groupMap: Partial<Record<string, MicaGroupData>> = {};
+  for (const s of assessment.sections) {
+    if (s.aiData) groupMap[s.sectionKey] = s.aiData as MicaGroupData;
+  }
+
   const groupsWithDefs = MICA_GROUPS.map((def) => {
-    const saved = assessment.sections.find((s) => s.sectionKey === def.key);
-    const data = (saved?.aiData ?? null) as MicaGroupData | null;
+    const data = groupMap[def.key] ?? null;
     return {
       key: def.key,
       label: def.label,
@@ -44,16 +48,6 @@ export async function generateAssessmentPDF(assessment: PDFAssessmentData): Prom
     };
   });
 
-  // Group 1 (Offeror) coming back entirely "na" is the no-issuer cascade
-  // signal from the extraction prompt — same derivation DocumentSheet uses
-  // on-screen, kept in sync here so the PDF explains the same exclusion
-  // rather than silently showing three empty groups.
-  const offerorGroup = groupsWithDefs.find((g) => g.key === "g01_offeror");
-  const noIssuerDetected =
-    !!offerorGroup &&
-    offerorGroup.items.some((i) => i.finding) &&
-    offerorGroup.items.every((i) => i.finding?.status === "na" || i.finding === null);
-
   const element = React.createElement(ReportDocument, {
     tokenName: assessment.tokenName,
     ticker: assessment.ticker,
@@ -62,7 +56,7 @@ export async function generateAssessmentPDF(assessment: PDFAssessmentData): Prom
     flag: assessment.flag,
     reviewerNotes: assessment.reviewerNotes,
     narrative: assessment.aiNarrative,
-    noIssuerDetected,
+    noIssuerDetected: noIssuerDetected(groupMap),
     createdAt: formatDate(assessment.createdAt),
     analystName: assessment.createdBy.name,
     reviewerName: assessment.reviewedBy?.name ?? null,
