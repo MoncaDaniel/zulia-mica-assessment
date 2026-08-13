@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   }
 
   const demoUser = await prisma.user.findUnique({
-    where: { email: "analyst@zulia.network" },
+    where: { email: "analyst@mica-esma.tool" },
   });
 
   if (!demoUser) {

@@ -36,9 +36,9 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="font-display font-bold text-3xl text-white">
-            Zulia <span className="text-brand-500">MiCA</span>
+            MiCA <span className="text-brand-500">ESMA</span>
           </h1>
-          <p className="text-slate-400 mt-2">Token Assessment Platform</p>
+          <p className="text-slate-400 mt-2">Assessment Tool</p>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
@@ -50,7 +50,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="analyst@zulia.network"
+              placeholder="analyst@mica-esma.tool"
               required
             />
             <Input
@@ -74,9 +74,9 @@ export default function LoginPage() {
 
           <div className="mt-6 p-3 bg-slate-800 rounded-lg text-xs text-slate-400 space-y-1">
             <p className="font-medium text-slate-300">Demo accounts:</p>
-            <p>analyst@zulia.network / password123</p>
-            <p>reviewer@zulia.network / password123</p>
-            <p>admin@zulia.network / password123</p>
+            <p>analyst@mica-esma.tool / password123</p>
+            <p>reviewer@mica-esma.tool / password123</p>
+            <p>admin@mica-esma.tool / password123</p>
           </div>
         </div>
       </div>

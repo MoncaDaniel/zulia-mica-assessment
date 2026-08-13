@@ -610,7 +610,7 @@ export function DocumentSheet({
 
           {/* Footer */}
           <div className="mt-14 pt-6 border-t border-stone-100 flex items-center justify-between text-[10px] text-stone-300 font-mono">
-            <span>Zulia Networks · MiCA Assessment Platform</span>
+            <span>MiCA ESMA Assessment Tool</span>
             {tokens && <span>{tokens.toLocaleString()} tokens used</span>}
           </div>
         </div>

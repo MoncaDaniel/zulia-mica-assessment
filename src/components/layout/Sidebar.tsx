@@ -21,9 +21,9 @@ export function Sidebar() {
   return (
     <aside className="w-60 shrink-0 bg-slate-950 border-r border-slate-800 flex flex-col h-screen sticky top-0">
       <div className="px-6 py-5 border-b border-slate-800">
-        <span className="font-display font-bold text-lg text-white">Zulia</span>
-        <span className="text-brand-500 font-bold text-lg"> MiCA</span>
-        <p className="text-xs text-slate-500 mt-0.5">Token Assessment</p>
+        <span className="font-display font-bold text-lg text-white">MiCA</span>
+        <span className="text-brand-500 font-bold text-lg"> ESMA</span>
+        <p className="text-xs text-slate-500 mt-0.5">Assessment Tool</p>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1">

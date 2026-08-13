@@ -7,33 +7,33 @@ async function main() {
   const passwordHash = await bcrypt.hash("password123", 12);
 
   const admin = await prisma.user.upsert({
-    where: { email: "admin@zulia.network" },
+    where: { email: "admin@mica-esma.tool" },
     update: { name: "Guest Admin" },
     create: {
       name: "Guest Admin",
-      email: "admin@zulia.network",
+      email: "admin@mica-esma.tool",
       password: passwordHash,
       role: Role.ADMIN,
     },
   });
 
   const analyst = await prisma.user.upsert({
-    where: { email: "analyst@zulia.network" },
+    where: { email: "analyst@mica-esma.tool" },
     update: { name: "Guest Analyst" },
     create: {
       name: "Guest Analyst",
-      email: "analyst@zulia.network",
+      email: "analyst@mica-esma.tool",
       password: passwordHash,
       role: Role.ANALYST,
     },
   });
 
   const reviewer = await prisma.user.upsert({
-    where: { email: "reviewer@zulia.network" },
+    where: { email: "reviewer@mica-esma.tool" },
     update: { name: "Guest Reviewer" },
     create: {
       name: "Guest Reviewer",
-      email: "reviewer@zulia.network",
+      email: "reviewer@mica-esma.tool",
       password: passwordHash,
       role: Role.REVIEWER,
     },

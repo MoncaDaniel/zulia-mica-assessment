@@ -156,7 +156,7 @@ function ItemStatus({ finding }: { finding: MicaItemFinding | null }) {
 function PageFooter({ tokenName }: { tokenName: string }) {
   return (
     <View style={styles.pageFooter} fixed>
-      <Text>CONFIDENTIAL — Zulia Networks LLC | MiCA Token Assessment</Text>
+      <Text>CONFIDENTIAL — MiCA ESMA Assessment Tool</Text>
       <Text>{tokenName}</Text>
       <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} fixed />
     </View>
@@ -180,15 +180,15 @@ export function ReportDocument({
   return (
     <Document
       title={`MiCA Assessment — ${tokenName}`}
-      author="Zulia Networks LLC"
+      author="MiCA ESMA Assessment Tool"
       subject="MiCA Compliance Assessment Report"
     >
       {/* Cover Page */}
       <Page size="A4" style={{ ...styles.page, padding: 0 }}>
         <View style={styles.coverPage}>
           <View>
-            <Text style={styles.coverLogo}>Zulia Networks</Text>
-            <Text style={{ color: "#475569", fontSize: 10, marginTop: 4 }}>MiCA Token Assessment Platform</Text>
+            <Text style={styles.coverLogo}>MiCA ESMA</Text>
+            <Text style={{ color: "#475569", fontSize: 10, marginTop: 4 }}>Assessment Tool</Text>
           </View>
 
           <View>
@@ -214,8 +214,8 @@ export function ReportDocument({
           </View>
 
           <Text style={styles.coverFooter}>
-            CONFIDENTIAL — This report has been prepared by Zulia Networks LLC for internal compliance purposes only.
-            It does not constitute legal or investment advice. © Zulia Networks LLC 2024.
+            CONFIDENTIAL — This report has been prepared for internal compliance purposes only.
+            It does not constitute legal or investment advice.
           </Text>
         </View>
       </Page>
@@ -223,7 +223,7 @@ export function ReportDocument({
       {/* Executive Summary */}
       <Page size="A4" style={styles.page}>
         <View style={styles.pageHeader}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: "#FF7A00" }}>Zulia Networks</Text>
+          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: "#FF7A00" }}>MiCA ESMA Assessment Tool</Text>
           <Text style={{ fontSize: 8, color: "#94a3b8" }}>MiCA Assessment — {tokenName}</Text>
         </View>
 
@@ -306,7 +306,7 @@ export function ReportDocument({
         return (
           <Page key={group.key} size="A4" style={styles.page}>
             <View style={styles.pageHeader}>
-              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: "#FF7A00" }}>Zulia Networks</Text>
+              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: "#FF7A00" }}>MiCA ESMA Assessment Tool</Text>
               <Text style={{ fontSize: 8, color: "#94a3b8" }}>{tokenName} — {group.label}</Text>
             </View>
 
@@ -361,7 +361,7 @@ export function ReportDocument({
       {/* Conclusion */}
       <Page size="A4" style={styles.page}>
         <View style={styles.pageHeader}>
-          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: "#FF7A00" }}>Zulia Networks</Text>
+          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: "#FF7A00" }}>MiCA ESMA Assessment Tool</Text>
           <Text style={{ fontSize: 8, color: "#94a3b8" }}>MiCA Assessment — {tokenName}</Text>
         </View>
 
@@ -403,7 +403,7 @@ export function ReportDocument({
           </Text>
           <Text style={{ fontSize: 7, color: "#cbd5e1", marginTop: 8 }}>
             DISCLAIMER: This assessment is for internal compliance purposes only and does not constitute legal, financial, or investment advice.
-            Zulia Networks LLC is not responsible for decisions made on the basis of this report.
+            No liability is accepted for decisions made on the basis of this report.
           </Text>
         </View>
 

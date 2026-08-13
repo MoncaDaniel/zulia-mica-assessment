@@ -6,7 +6,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
       <div className="max-w-3xl mx-auto px-4 py-16">
         <div className="mb-10 flex items-center justify-between">
           <Link href="/" className="font-display font-bold text-lg text-white">
-            Zulia <span className="text-brand-500">MiCA</span>
+            MiCA <span className="text-brand-500">ESMA</span>
           </Link>
           <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
             ← Back to registry

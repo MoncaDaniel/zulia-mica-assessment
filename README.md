@@ -123,9 +123,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Email | Password | Role |
 |---|---|---|
-| analyst@zulia.network | password123 | ANALYST |
-| reviewer@zulia.network | password123 | REVIEWER |
-| admin@zulia.network | password123 | ADMIN |
+| analyst@mica-esma.tool | password123 | ANALYST |
+| reviewer@mica-esma.tool | password123 | REVIEWER |
+| admin@mica-esma.tool | password123 | ADMIN |
 
 **Change these before any real deployment** — they exist purely to let a local `npm run dev` instance be explored end-to-end.
 

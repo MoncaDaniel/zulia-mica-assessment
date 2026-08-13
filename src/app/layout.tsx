@@ -3,7 +3,7 @@ import "./globals.css";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "MiCA Assessment Platform | Zulia Networks",
+  title: "MiCA ESMA Assessment Tool",
   description: "MiCA-compliant token assessment and compliance scoring",
 };
 

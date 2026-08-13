@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Cookie Policy | Zulia MiCA" };
+export const metadata: Metadata = { title: "Cookie Policy | MiCA ESMA Assessment Tool" };
 
 export default function CookiesPage() {
   return (

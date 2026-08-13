@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Terms of Use | Zulia MiCA" };
+export const metadata: Metadata = { title: "Terms of Use | MiCA ESMA Assessment Tool" };
 
 export default function TermsPage() {
   return (
@@ -11,11 +11,11 @@ export default function TermsPage() {
       <section>
         <h2 className="text-base font-semibold text-white mt-8 mb-2">1. Acceptance of these terms</h2>
         <p>
-          These Terms of Use govern your access to and use of the Zulia MiCA platform, including the
-          public token registry, the compliance-assessment tool, and any related pages (the
-          &ldquo;Service&rdquo;), operated by Zulia Networks (&ldquo;Zulia&rdquo;, &ldquo;we&rdquo;,
-          &ldquo;us&rdquo;). By browsing the registry, submitting a contact request, or logging in as
-          an analyst, you agree to these terms. If you do not agree, do not use the Service.
+          These Terms of Use govern your access to and use of the MiCA ESMA Assessment Tool, including
+          the public token registry, the compliance-assessment tool, and any related pages (the
+          &ldquo;Service&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;). By browsing the registry,
+          submitting a contact request, or logging in as an analyst, you agree to these terms. If you
+          do not agree, do not use the Service.
         </p>
       </section>
 
@@ -50,7 +50,7 @@ export default function TermsPage() {
         <p>
           The Service is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo;, without warranty
           of any kind, express or implied, including as to accuracy, completeness, or fitness for a
-          particular purpose. To the maximum extent permitted by applicable law, Zulia Networks shall
+          particular purpose. To the maximum extent permitted by applicable law, we shall
           not be liable for any direct, indirect, incidental, consequential, or special damages arising
           from or in connection with your use of, or reliance on, the Service, including decisions made
           on the basis of an assessment, score, or registry listing.
@@ -98,7 +98,7 @@ export default function TermsPage() {
       <section>
         <h2 className="text-base font-semibold text-white mt-8 mb-2">9. Governing law</h2>
         <p>
-          These terms are governed by the laws applicable in Zulia Networks&rsquo; place of
+          These terms are governed by the laws applicable in the operator&rsquo;s place of
           establishment, without regard to conflict-of-laws principles, unless mandatory local
           consumer-protection law provides otherwise.
         </p>

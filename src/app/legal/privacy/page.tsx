@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Privacy Policy | Zulia MiCA" };
+export const metadata: Metadata = { title: "Privacy Policy | MiCA ESMA Assessment Tool" };
 
 export default function PrivacyPage() {
   return (
@@ -11,8 +11,8 @@ export default function PrivacyPage() {
       <section>
         <h2 className="text-base font-semibold text-white mt-8 mb-2">1. Who we are</h2>
         <p>
-          Zulia Networks (&ldquo;Zulia&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) operates the Zulia
-          MiCA platform. For questions about this policy or to exercise any of the rights below,
+          This section refers to the operator of the MiCA ESMA Assessment Tool as &ldquo;we&rdquo; or
+          &ldquo;us&rdquo;. For questions about this policy or to exercise any of the rights below,
           contact <a href="mailto:danielmoncada10@gmail.com" className="text-brand-400 hover:underline">danielmoncada10@gmail.com</a>.
         </p>
       </section>

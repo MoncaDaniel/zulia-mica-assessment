@@ -37,7 +37,7 @@ export default function PublicRegistryPage() {
       <div className="w-full max-w-2xl">
         <div className="mb-10">
           <h1 className="font-display font-bold text-2xl text-white">
-            Zulia <span className="text-brand-500">MiCA</span>
+            MiCA <span className="text-brand-500">ESMA</span>
           </h1>
           <p className="text-slate-500 text-sm mt-0.5">Public token registry</p>
         </div>
