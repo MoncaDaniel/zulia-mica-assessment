@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { runMicaExtractionStream, scoreGroup, overallScore, complianceFlag } from "@/lib/ai/extraction";
+import { MICA_GROUPS } from "@/lib/ai/mica-groups";
 import { fetchCoinFinancials, formatFinancialsForPrompt } from "@/lib/ai/coin-data";
 import { fetchLegalEntities, formatLegalEntitiesForPrompt } from "@/lib/ai/legal-entity";
 import { scrapeProjectPages, formatScrapedPagesForPrompt, scrapeMarketingComms, formatMarketingCommsForPrompt } from "@/lib/ai/web-scraper";
@@ -159,7 +160,7 @@ export async function POST(
           const score   = overallScore(collectedGroups);
           const flag    = complianceFlag(score);
           const groups  = Object.keys(collectedGroups).length;
-          console.log(`[analyze] Complete   · score ${score ?? "N/A"}% ${flag ?? ""} · ${groups}/12 groups · ${(totalMs / 1000).toFixed(1)}s total`);
+          console.log(`[analyze] Complete   · score ${score ?? "N/A"}% ${flag ?? ""} · ${groups}/${MICA_GROUPS.length} groups · ${(totalMs / 1000).toFixed(1)}s total`);
           console.log(`[analyze] ${SEP}`);
           if (session.user?.id) {
             // Awaited for the same reason as onNarrative's update above --

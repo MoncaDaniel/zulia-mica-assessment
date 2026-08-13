@@ -5,8 +5,8 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
 } from "@react-pdf/renderer";
+import type { MicaItemFinding } from "@/lib/ai/types";
 
 const styles = StyleSheet.create({
   page: {
@@ -38,15 +38,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: "#FF7A00",
   },
-  fieldRow: {
+  itemRow: {
     flexDirection: "row",
+    gap: 6,
     marginBottom: 6,
     paddingBottom: 6,
     borderBottomWidth: 0.5,
     borderBottomColor: "#e2e8f0",
   },
-  fieldLabel: { width: "40%", color: "#64748b", fontSize: 8 },
-  fieldValue: { flex: 1, color: "#1e293b", fontSize: 8 },
+  itemIcon: { width: 12, fontSize: 8, fontFamily: "Helvetica-Bold" },
+  itemBody: { flex: 1 },
+  itemLabel: { fontSize: 8, color: "#1e293b" },
+  itemArticle: { fontSize: 6.5, color: "#94a3b8", marginTop: 1 },
+  itemExcerpt: { fontSize: 7.5, color: "#64748b", fontStyle: "italic", marginTop: 2 },
+  itemReasoning: { fontSize: 7, color: "#94a3b8", marginTop: 2 },
   scoreTable: {
     marginBottom: 20,
   },
@@ -64,13 +69,6 @@ const styles = StyleSheet.create({
   scoreCol2: { width: "15%", textAlign: "center" as const },
   scoreCol3: { width: "20%", textAlign: "center" as const },
   scoreCol4: { width: "20%", textAlign: "center" as const },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-    fontSize: 8,
-    fontFamily: "Helvetica-Bold",
-  },
   pageHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -92,16 +90,31 @@ const styles = StyleSheet.create({
     borderTopColor: "#e2e8f0",
     paddingTop: 6,
   },
+  noIssuerNote: {
+    backgroundColor: "#f0f9ff",
+    padding: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#bae6fd",
+    marginBottom: 16,
+  },
 });
 
-interface ReportSection {
+interface ReportItem {
   key: string;
   label: string;
-  description: string;
-  score: number | null;
-  weight: number | null;
-  data: Record<string, string>;
-  completedAt: Date | null;
+  articleRef: string;
+  finding: MicaItemFinding | null;
+}
+
+interface ReportGroup {
+  key: string;
+  label: string;
+  articleRef: string;
+  scope: string;
+  weight: number;
+  score: number | null; // 0-1 fraction, or null if wholly N/A/unscored
+  items: ReportItem[];
 }
 
 interface ReportDocumentProps {
@@ -111,10 +124,12 @@ interface ReportDocumentProps {
   overallScore: number | null;
   flag: string | null;
   reviewerNotes: string | null;
+  narrative: string | null;
+  noIssuerDetected: boolean;
   createdAt: string;
   analystName: string;
   reviewerName: string | null;
-  sections: ReportSection[];
+  groups: ReportGroup[];
 }
 
 function scoreColor(score: number | null): string {
@@ -130,14 +145,15 @@ function flagColor(flag: string | null): string {
   return "#ef4444";
 }
 
-function formatFieldKey(key: string): string {
-  return key
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (s) => s.toUpperCase())
-    .trim();
+function ItemStatus({ finding }: { finding: MicaItemFinding | null }) {
+  const status = finding?.status ?? "";
+  if (status === "found") return <Text style={[styles.itemIcon, { color: "#16a34a" }]}>[Y]</Text>;
+  if (status === "not_found") return <Text style={[styles.itemIcon, { color: "#dc2626" }]}>[N]</Text>;
+  if (status === "na") return <Text style={[styles.itemIcon, { color: "#94a3b8" }]}>[-]</Text>;
+  return <Text style={[styles.itemIcon, { color: "#d97706" }]}>[?]</Text>;
 }
 
-function PageFooter({ pageNum, tokenName }: { pageNum: number; tokenName: string }) {
+function PageFooter({ tokenName }: { tokenName: string }) {
   return (
     <View style={styles.pageFooter} fixed>
       <Text>CONFIDENTIAL — Zulia Networks LLC | MiCA Token Assessment</Text>
@@ -154,10 +170,12 @@ export function ReportDocument({
   overallScore,
   flag,
   reviewerNotes,
+  narrative,
+  noIssuerDetected,
   createdAt,
   analystName,
   reviewerName,
-  sections,
+  groups,
 }: ReportDocumentProps) {
   return (
     <Document
@@ -224,32 +242,50 @@ export function ReportDocument({
           </View>
         </View>
 
+        {noIssuerDetected && (
+          <View style={styles.noIssuerNote}>
+            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, marginBottom: 4, color: "#075985" }}>
+              No identifiable issuer detected
+            </Text>
+            <Text style={{ fontSize: 7.5, color: "#075985", lineHeight: 1.5 }}>
+              No specific legal entity, company, or foundation could be identified as having created, offered,
+              or controlling the issuance of this crypto-asset. Under MiCA Article 4(3) / Recital 22, the Title
+              II whitepaper-issuer-disclosure obligations do not attach in this case, so the Offeror, Issuer, and
+              Offer Terms groups are excluded from this score rather than scored as non-compliant.
+            </Text>
+          </View>
+        )}
+
+        {narrative && (
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontFamily: "Helvetica-Bold", marginBottom: 6 }}>Compliance Summary</Text>
+            <Text style={{ fontSize: 8, lineHeight: 1.6, color: "#475569" }}>{narrative}</Text>
+          </View>
+        )}
+
         {/* Score Table */}
-        <Text style={{ fontFamily: "Helvetica-Bold", marginBottom: 8 }}>Score Breakdown by Section</Text>
+        <Text style={{ fontFamily: "Helvetica-Bold", marginBottom: 8 }}>Score Breakdown by Group</Text>
         <View style={styles.scoreTable}>
           <View style={[styles.scoreRow, styles.scoreRowHeader]}>
-            <Text style={[styles.scoreCol1, { fontFamily: "Helvetica-Bold", fontSize: 8 }]}>Section</Text>
+            <Text style={[styles.scoreCol1, { fontFamily: "Helvetica-Bold", fontSize: 8 }]}>Group</Text>
             <Text style={[styles.scoreCol2, { fontFamily: "Helvetica-Bold", fontSize: 8 }]}>Weight</Text>
             <Text style={[styles.scoreCol3, { fontFamily: "Helvetica-Bold", fontSize: 8 }]}>Score</Text>
             <Text style={[styles.scoreCol4, { fontFamily: "Helvetica-Bold", fontSize: 8 }]}>Contribution</Text>
           </View>
-          {sections
-            .filter((s) => s.weight != null)
-            .map((s) => {
-              const contribution = s.score != null && s.weight != null
-                ? `${Math.round(s.score * s.weight)}%`
-                : "—";
-              return (
-                <View key={s.key} style={styles.scoreRow}>
-                  <Text style={[styles.scoreCol1, { fontSize: 8 }]}>{s.label}</Text>
-                  <Text style={[styles.scoreCol2, { fontSize: 8 }]}>{s.weight != null ? `${Math.round(s.weight * 100)}%` : "—"}</Text>
-                  <Text style={[styles.scoreCol3, { fontSize: 8, color: scoreColor(s.score), fontFamily: "Helvetica-Bold" }]}>
-                    {s.score != null ? `${Math.round(s.score)}%` : "—"}
-                  </Text>
-                  <Text style={[styles.scoreCol4, { fontSize: 8 }]}>{contribution}</Text>
-                </View>
-              );
-            })}
+          {groups.map((g) => {
+            const scorePct = g.score != null ? Math.round(g.score * 100) : null;
+            const contribution = scorePct != null ? `${Math.round(g.score! * g.weight * 100)}%` : "excluded";
+            return (
+              <View key={g.key} style={styles.scoreRow}>
+                <Text style={[styles.scoreCol1, { fontSize: 8 }]}>{g.label}</Text>
+                <Text style={[styles.scoreCol2, { fontSize: 8 }]}>{Math.round(g.weight * 100)}%</Text>
+                <Text style={[styles.scoreCol3, { fontSize: 8, color: scoreColor(scorePct), fontFamily: "Helvetica-Bold" }]}>
+                  {scorePct != null ? `${scorePct}%` : "N/A"}
+                </Text>
+                <Text style={[styles.scoreCol4, { fontSize: 8 }]}>{contribution}</Text>
+              </View>
+            );
+          })}
         </View>
 
         {reviewerNotes && (
@@ -259,43 +295,65 @@ export function ReportDocument({
           </View>
         )}
 
-        <PageFooter pageNum={2} tokenName={tokenName} />
+        <PageFooter tokenName={tokenName} />
       </Page>
 
-      {/* One page per section */}
-      {sections.map((section) => {
-        const entries = Object.entries(section.data).filter(([, v]) => v != null && String(v).trim() !== "");
+      {/* One page per compliance group */}
+      {groups.map((group) => {
+        const scorePct = group.score != null ? Math.round(group.score * 100) : null;
+        const allNA = group.items.every((i) => i.finding?.status === "na" || i.finding === null);
 
         return (
-          <Page key={section.key} size="A4" style={styles.page}>
+          <Page key={group.key} size="A4" style={styles.page}>
             <View style={styles.pageHeader}>
               <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10, color: "#FF7A00" }}>Zulia Networks</Text>
-              <Text style={{ fontSize: 8, color: "#94a3b8" }}>{tokenName} — {section.label}</Text>
+              <Text style={{ fontSize: 8, color: "#94a3b8" }}>{tokenName} — {group.label}</Text>
             </View>
 
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <Text style={styles.sectionTitle}>{section.label}</Text>
-              {section.score != null && (
-                <Text style={{ fontSize: 20, fontFamily: "Helvetica-Bold", color: scoreColor(section.score) }}>
-                  {Math.round(section.score)}%
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <Text style={styles.sectionTitle}>{group.label}</Text>
+              {scorePct != null && (
+                <Text style={{ fontSize: 20, fontFamily: "Helvetica-Bold", color: scoreColor(scorePct) }}>
+                  {scorePct}%
                 </Text>
               )}
             </View>
 
-            <Text style={{ fontSize: 8, color: "#64748b", marginBottom: 12 }}>{section.description}</Text>
+            <Text style={{ fontSize: 7.5, color: "#94a3b8", marginBottom: 12 }}>
+              {group.articleRef} · {group.scope}
+            </Text>
 
-            {entries.length === 0 ? (
-              <Text style={{ color: "#94a3b8", fontStyle: "italic", fontSize: 8 }}>No data recorded for this section.</Text>
+            {allNA ? (
+              <Text style={{ color: "#94a3b8", fontStyle: "italic", fontSize: 8 }}>
+                All items not applicable for this token type.
+              </Text>
             ) : (
-              entries.map(([key, value]) => (
-                <View key={key} style={styles.fieldRow}>
-                  <Text style={styles.fieldLabel}>{formatFieldKey(key)}</Text>
-                  <Text style={styles.fieldValue}>{String(value)}</Text>
+              group.items.map((item) => (
+                <View key={item.key} style={styles.itemRow}>
+                  <ItemStatus finding={item.finding} />
+                  <View style={styles.itemBody}>
+                    <Text style={styles.itemLabel}>{item.label}</Text>
+                    <Text style={styles.itemArticle}>{item.articleRef}</Text>
+                    {item.finding?.status === "found" && item.finding.excerpt && (
+                      <Text style={styles.itemExcerpt}>&ldquo;{item.finding.excerpt}&rdquo;</Text>
+                    )}
+                    {item.finding?.status === "not_found" && (
+                      <Text style={{ ...styles.itemExcerpt, color: "#dc2626", fontStyle: "normal" }}>
+                        Not found in whitepaper
+                      </Text>
+                    )}
+                    {item.finding?.status === "na" && (
+                      <Text style={styles.itemExcerpt}>Not applicable</Text>
+                    )}
+                    {item.finding?.reasoning && (
+                      <Text style={styles.itemReasoning}>{item.finding.reasoning}</Text>
+                    )}
+                  </View>
                 </View>
               ))
             )}
 
-            <PageFooter pageNum={0} tokenName={tokenName} />
+            <PageFooter tokenName={tokenName} />
           </Page>
         );
       })}
@@ -327,7 +385,7 @@ export function ReportDocument({
         )}
         {flag === "REVIEW" && (
           <Text style={{ fontSize: 8, lineHeight: 1.6, color: "#475569" }}>
-            The token requires additional review before listing. Recommended actions: (1) Address gaps identified in scored sections;
+            The token requires additional review before listing. Recommended actions: (1) Address gaps identified in scored groups;
             (2) Request supplementary documentation from the issuer; (3) Re-assess after remediation; (4) Escalate to senior compliance officer.
           </Text>
         )}
@@ -349,7 +407,7 @@ export function ReportDocument({
           </Text>
         </View>
 
-        <PageFooter pageNum={0} tokenName={tokenName} />
+        <PageFooter tokenName={tokenName} />
       </Page>
     </Document>
   );

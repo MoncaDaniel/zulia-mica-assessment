@@ -6,39 +6,50 @@ import Link from "next/link";
 import { StatusBadge, FlagBadge } from "@/components/dashboard/StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-import { SECTION_DEFINITIONS, SECTION_WEIGHTS } from "@/lib/scoring";
+import { MICA_GROUPS } from "@/lib/ai/mica-groups";
+import { scoreGroup } from "@/lib/ai/scoring";
+import type { MicaGroupData, MicaItemFinding } from "@/lib/ai/types";
 import { formatDate, formatScore, scoreToColor, cn } from "@/lib/utils";
 
 interface Props {
   params: { id: string };
 }
 
-function FieldDisplay({ label, value }: { label: string; value: unknown }) {
-  if (value == null || String(value).trim() === "") return null;
-
-  const displayVal = String(value);
-  const isYesNo = ["yes", "no", "n/a"].includes(displayVal.toLowerCase());
-
-  return (
-    <div className="flex gap-4 py-2 border-b border-slate-800 last:border-0">
-      <span className="text-sm text-slate-500 w-64 shrink-0">{label}</span>
-      <span className={cn(
-        "text-sm flex-1",
-        isYesNo && displayVal.toLowerCase() === "yes" ? "text-green-400 font-medium" :
-        isYesNo && displayVal.toLowerCase() === "no" ? "text-red-400 font-medium" :
-        "text-slate-200"
-      )}>
-        {displayVal}
-      </span>
-    </div>
-  );
+function statusGlyph(status: MicaItemFinding["status"] | undefined) {
+  switch (status) {
+    case "found":     return { icon: "✓", className: "text-green-400" };
+    case "not_found": return { icon: "✗", className: "text-red-400" };
+    case "na":        return { icon: "–", className: "text-slate-500" };
+    default:          return { icon: "?", className: "text-amber-400" };
+  }
 }
 
-function formatKey(key: string): string {
-  return key
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (s) => s.toUpperCase())
-    .trim();
+function ItemDisplay({ label, articleRef, finding }: { label: string; articleRef: string; finding: MicaItemFinding | null }) {
+  const { icon, className } = statusGlyph(finding?.status);
+
+  return (
+    <div className="flex gap-3 py-2.5 border-b border-slate-800 last:border-0">
+      <span className={cn("shrink-0 w-4 text-sm font-bold mt-0.5", className)}>{icon}</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-4">
+          <span className="text-sm text-slate-300">{label}</span>
+          <span className="shrink-0 text-[10px] text-slate-600 font-mono mt-0.5">{articleRef}</span>
+        </div>
+        {finding?.status === "found" && finding.excerpt && (
+          <p className="mt-1 text-xs text-slate-500 italic">&ldquo;{finding.excerpt}&rdquo;</p>
+        )}
+        {finding?.status === "not_found" && (
+          <p className="mt-1 text-xs text-red-400">Not found in whitepaper</p>
+        )}
+        {finding?.status === "na" && (
+          <p className="mt-1 text-xs text-slate-500">Not applicable</p>
+        )}
+        {finding?.reasoning && (
+          <p className="mt-1 text-xs text-slate-600">{finding.reasoning}</p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default async function ReportPage({ params }: Props) {
@@ -61,7 +72,18 @@ export default async function ReportPage({ params }: Props) {
 
   if (!assessment) notFound();
 
-  const sectionMap = new Map(assessment.sections.map((s) => [s.sectionKey, s]));
+  const groupMap = new Map(assessment.sections.map((s) => [s.sectionKey, s.aiData as MicaGroupData | null]));
+
+  const groupsWithScores = MICA_GROUPS.map((def) => {
+    const data = groupMap.get(def.key) ?? null;
+    return { def, data, score: data ? scoreGroup(data) : null };
+  });
+
+  const offerorData = groupMap.get("g01_offeror");
+  const noIssuerDetected =
+    !!offerorData &&
+    Object.keys(offerorData).length > 0 &&
+    Object.values(offerorData).every((f) => f.status === "na");
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -134,30 +156,27 @@ export default async function ReportPage({ params }: Props) {
               )}
             </div>
             <div className="space-y-2">
-              {SECTION_DEFINITIONS.filter((s) => SECTION_WEIGHTS[s.key]).map((section) => {
-                const saved = sectionMap.get(section.key);
-                const score = saved?.sectionScore ?? null;
-                const weight = SECTION_WEIGHTS[section.key]!;
-
+              {groupsWithScores.map(({ def, score }) => {
+                const scorePct = score != null ? Math.round(score * 100) : null;
                 return (
-                  <div key={section.key} className="flex items-center gap-3 text-sm">
-                    <span className="text-xs text-slate-500 w-8 text-right">{Math.round(weight * 100)}%</span>
+                  <div key={def.key} className="flex items-center gap-3 text-sm">
+                    <span className="text-xs text-slate-500 w-8 text-right">{Math.round(def.weight * 100)}%</span>
                     <div className="flex-1">
                       <div className="flex justify-between mb-0.5">
-                        <span className="text-slate-400 text-xs">{section.label}</span>
-                        <span className={cn("font-medium text-xs", scoreToColor(score))}>
-                          {formatScore(score)}
+                        <span className="text-slate-400 text-xs">{def.label}</span>
+                        <span className={cn("font-medium text-xs", scoreToColor(scorePct))}>
+                          {scorePct != null ? `${scorePct}%` : "N/A"}
                         </span>
                       </div>
                       <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
                         <div
                           className={cn(
                             "h-full rounded-full",
-                            score == null ? "w-0" :
-                            score > 75 ? "bg-green-500" :
-                            score >= 50 ? "bg-amber-500" : "bg-red-500"
+                            scorePct == null ? "w-0" :
+                            scorePct > 75 ? "bg-green-500" :
+                            scorePct >= 50 ? "bg-amber-500" : "bg-red-500"
                           )}
-                          style={{ width: `${score ?? 0}%` }}
+                          style={{ width: `${scorePct ?? 0}%` }}
                         />
                       </div>
                     </div>
@@ -166,6 +185,26 @@ export default async function ReportPage({ params }: Props) {
               })}
             </div>
           </div>
+
+          {noIssuerDetected && (
+            <div className="mt-4 p-4 bg-sky-900/20 border border-sky-800 rounded-lg">
+              <p className="text-sm font-medium text-sky-300 mb-1">No identifiable issuer detected</p>
+              <p className="text-sm text-sky-200">
+                No specific legal entity, company, or foundation could be identified as having created,
+                offered, or controlling the issuance of this crypto-asset. Under MiCA Article 4(3) /
+                Recital 22, the Title II whitepaper-issuer-disclosure obligations do not attach in this
+                case, so the Offeror, Issuer, and Offer Terms groups are excluded from this score rather
+                than scored as non-compliant.
+              </p>
+            </div>
+          )}
+
+          {assessment.aiNarrative && (
+            <div className="mt-4 p-4 bg-slate-800/50 border border-slate-700 rounded-lg">
+              <p className="text-sm font-medium text-slate-300 mb-1">Compliance Summary</p>
+              <p className="text-sm text-slate-400 whitespace-pre-line">{assessment.aiNarrative}</p>
+            </div>
+          )}
 
           {assessment.reviewerNotes && (
             <div className="mt-4 p-4 bg-amber-900/20 border border-amber-800 rounded-lg">
@@ -176,34 +215,41 @@ export default async function ReportPage({ params }: Props) {
         </CardContent>
       </Card>
 
-      {/* Section details */}
-      {SECTION_DEFINITIONS.map((section) => {
-        const saved = sectionMap.get(section.key);
-        const data = (saved?.data ?? {}) as Record<string, unknown>;
-        const entries = Object.entries(data).filter(([, v]) => v != null && String(v).trim() !== "");
+      {/* Group details */}
+      {groupsWithScores.map(({ def, data, score }) => {
+        const scorePct = score != null ? Math.round(score * 100) : null;
+        const items = Object.keys(data ?? {}).length > 0 ? def.items : [];
+        const allNA = items.length > 0 && items.every((i) => data?.[i.key]?.status === "na");
 
         return (
-          <Card key={section.key}>
+          <Card key={def.key}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-white">{section.label}</h3>
-                  <p className="text-xs text-slate-500">{section.description}</p>
+                  <h3 className="font-semibold text-white">{def.label}</h3>
+                  <p className="text-xs text-slate-500">{def.articleRef} · {def.scope}</p>
                 </div>
-                {saved?.sectionScore != null && (
-                  <span className={cn("text-2xl font-bold font-display", scoreToColor(saved.sectionScore))}>
-                    {formatScore(saved.sectionScore)}
+                {scorePct != null && (
+                  <span className={cn("text-2xl font-bold font-display", scoreToColor(scorePct))}>
+                    {scorePct}%
                   </span>
                 )}
               </div>
             </CardHeader>
             <CardContent>
-              {entries.length === 0 ? (
-                <p className="text-slate-500 text-sm italic">No data recorded</p>
+              {items.length === 0 ? (
+                <p className="text-slate-500 text-sm italic">Not yet analysed</p>
+              ) : allNA ? (
+                <p className="text-slate-500 text-sm italic">All items not applicable for this token type.</p>
               ) : (
                 <div>
-                  {entries.map(([key, value]) => (
-                    <FieldDisplay key={key} label={formatKey(key)} value={value} />
+                  {def.items.map((item) => (
+                    <ItemDisplay
+                      key={item.key}
+                      label={item.label}
+                      articleRef={item.articleRef}
+                      finding={data?.[item.key] ?? null}
+                    />
                   ))}
                 </div>
               )}

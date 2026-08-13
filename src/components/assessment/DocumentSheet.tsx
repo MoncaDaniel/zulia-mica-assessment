@@ -388,6 +388,17 @@ export function DocumentSheet({
   const totalGroups     = MICA_GROUPS.length;
   const compliancePct   = calcWeightedScore(groups);
 
+  // Derived, not stored separately: Group 1 (Offeror) comes back entirely
+  // "na" exactly when the no-issuer cascade in the extraction prompt fired
+  // (see prompts.ts) — i.e. Claude determined no identifiable legal entity
+  // created or controls this asset. Surface that as a finding rather than
+  // letting the score just quietly exclude three groups with no explanation.
+  const offerorGroup = groups["g01_offeror"];
+  const noIssuerDetected =
+    !!offerorGroup &&
+    Object.keys(offerorGroup).length > 0 &&
+    Object.values(offerorGroup).every((f) => f.status === "na");
+
   const handleStreamEvent = useCallback((event: StreamEvent) => {
     switch (event.type) {
       case "fetching_market_data":
@@ -543,7 +554,26 @@ export function DocumentSheet({
             </div>
           )}
 
-          {/* 12 compliance groups */}
+          {/* No-identifiable-issuer notice — explains why Groups 1/2/4 are excluded */}
+          {noIssuerDetected && (
+            <div className="mb-6 p-4 bg-sky-50 border border-sky-200 rounded-sm">
+              <p className="text-xs font-bold uppercase tracking-wide text-sky-700">
+                No identifiable issuer detected
+              </p>
+              <p className="mt-1.5 text-xs text-sky-800 leading-relaxed">
+                No specific legal entity, company, or foundation could be identified as having
+                created, offered, or controlling the issuance of this crypto-asset — e.g. tokens
+                distributed automatically as mining or validation rewards, with no pre-mine or
+                controlling treasury. Under MiCA Article 4(3) / Recital 22, the Title II
+                whitepaper-issuer-disclosure obligations do not attach in this case, so Groups 1
+                (Offeror), 2 (Issuer), and 4 (Offer Terms) are excluded from this score rather
+                than scored as non-compliant. This reflects the absence of an obligation, not a
+                compliance failure.
+              </p>
+            </div>
+          )}
+
+          {/* 13 compliance groups */}
           <div>
             {MICA_GROUPS.map((group, idx) => {
               const data       = groups[group.key] ?? null;

@@ -48,7 +48,7 @@ const ITEM_SCHEMA = {
 } as const;
 
 // ── Build extraction tool, scoped to a subset of MICA_GROUPS ──────────────────
-// A single call covering all 12 groups (70 items) takes Claude ~70-80s to
+// A single call covering all 13 groups (75 items) takes Claude ~70-80s to
 // stream back, which exceeds Vercel's Hobby-tier 60s function ceiling. Instead
 // we split the groups into small batches and run one tool-use call per batch
 // concurrently -- each call has far less output to generate, so wall-clock
@@ -82,7 +82,7 @@ function buildExtractionTool(groupKeys: readonly string[]) {
   };
 }
 
-// Batch size chosen so 12 groups → 3 concurrent calls; stays generic if the
+// Batch size chosen so 13 groups → 4 concurrent calls; stays generic if the
 // group list ever changes.
 const BATCH_SIZE = 4;
 
@@ -246,10 +246,10 @@ async function runBatch(
 }
 
 // ── Narrative — small separate call over the already-collected findings ────────
-// Kept out of the batch calls entirely: it needs the full picture (all 12
+// Kept out of the batch calls entirely: it needs the full picture (all 13
 // groups) to write a coherent summary, so it can only run after every batch
 // resolves. Making it its own tiny call (short prompt, no document, no tool
-// schema covering 70 fields) keeps this step fast — a few seconds, not
+// schema covering 75 fields) keeps this step fast — a few seconds, not
 // another 20-30s — since it's the one part of the pipeline that's inherently
 // sequential rather than parallelizable.
 async function generateNarrative(
@@ -292,7 +292,7 @@ async function generateNarrative(
 }
 
 // ── Core streaming extraction ─────────────────────────────────────────────────
-// Runs the 12 groups as several smaller concurrent tool-use calls instead of
+// Runs the 13 groups as several smaller concurrent tool-use calls instead of
 // one call covering everything -- a single call takes Claude ~70-80s to
 // stream back, which exceeds Vercel's Hobby-tier 60s function ceiling.
 // Splitting the same total work across BATCH_SIZE-sized concurrent calls
