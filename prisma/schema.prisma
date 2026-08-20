@@ -107,6 +107,13 @@ model Assessment {
   aiError       String?          @db.Text
   aiSourceUrls  Json             @default("[]")
 
+  // CoinGecko snapshot (CoinFinancials shape, see src/lib/ai/coin-data.ts)
+  // captured at analysis time. Purely informational market context — never
+  // an input to the compliance score. Persisted (rather than kept only in
+  // the SSE stream's client state) so it still renders after a page reload
+  // or on the read-only report view.
+  aiFinancials  Json?
+
   // Whitepaper metadata — the actual PDF bytes live in AssessmentPdf, kept out
   // of this model so routes that JSON-serialize an Assessment can never
   // accidentally leak the raw file (AssessmentPdf is only ever explicitly

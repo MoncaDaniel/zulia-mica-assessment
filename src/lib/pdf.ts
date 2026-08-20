@@ -4,6 +4,7 @@ import { ReportDocument } from "@/components/pdf/ReportTemplate";
 import { MICA_GROUPS } from "@/lib/ai/mica-groups";
 import { scoreGroup, noIssuerDetected } from "@/lib/ai/scoring";
 import type { MicaGroupData } from "@/lib/ai/types";
+import type { CoinFinancials } from "@/lib/ai/coin-data";
 import { formatDate } from "@/lib/utils";
 
 export interface PDFAssessmentData {
@@ -15,6 +16,7 @@ export interface PDFAssessmentData {
   flag: string | null;
   reviewerNotes: string | null;
   aiNarrative: string | null;
+  aiFinancials: unknown; // CoinFinancials snapshot, stored as JSON — see coin-data.ts
   createdAt: Date;
   createdBy: { name: string; email: string };
   reviewedBy: { name: string; email: string } | null;
@@ -48,6 +50,19 @@ export async function generateAssessmentPDF(assessment: PDFAssessmentData): Prom
     };
   });
 
+  // Same "low score isn't a market-availability verdict" caveat as the
+  // report page — see src/app/(dashboard)/assessments/[id]/report/page.tsx.
+  const reservesData    = groupMap["g09_reserves"];
+  const prudentialData  = groupMap["g13_art_prudential"];
+  const isStablecoinFlow =
+    (!!reservesData   && Object.values(reservesData).some((it) => it.status !== "na")) ||
+    (!!prudentialData && Object.values(prudentialData).some((it) => it.status !== "na"));
+  const reservesScore   = reservesData   ? scoreGroup(reservesData)   : null;
+  const prudentialScore = prudentialData ? scoreGroup(prudentialData) : null;
+  const lowStablecoinDisclosure =
+    isStablecoinFlow &&
+    ((reservesScore !== null && reservesScore < 0.5) || (prudentialScore !== null && prudentialScore < 0.5));
+
   const element = React.createElement(ReportDocument, {
     tokenName: assessment.tokenName,
     ticker: assessment.ticker,
@@ -57,6 +72,8 @@ export async function generateAssessmentPDF(assessment: PDFAssessmentData): Prom
     reviewerNotes: assessment.reviewerNotes,
     narrative: assessment.aiNarrative,
     noIssuerDetected: noIssuerDetected(groupMap),
+    financials: (assessment.aiFinancials as CoinFinancials | null) ?? null,
+    lowStablecoinDisclosure,
     createdAt: formatDate(assessment.createdAt),
     analystName: assessment.createdBy.name,
     reviewerName: assessment.reviewedBy?.name ?? null,

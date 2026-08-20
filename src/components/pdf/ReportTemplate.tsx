@@ -7,6 +7,8 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { MicaItemFinding } from "@/lib/ai/types";
+import { mayPredateMicaArtEmt, MARKET_DATA_DISCLAIMER } from "@/lib/ai/coin-data";
+import type { CoinFinancials } from "@/lib/ai/coin-data";
 
 const styles = StyleSheet.create({
   page: {
@@ -98,6 +100,22 @@ const styles = StyleSheet.create({
     borderColor: "#bae6fd",
     marginBottom: 16,
   },
+  marketContext: {
+    backgroundColor: "#f8fafc",
+    padding: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    marginBottom: 16,
+  },
+  cautionNote: {
+    backgroundColor: "#fffbeb",
+    padding: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    marginBottom: 16,
+  },
 });
 
 interface ReportItem {
@@ -126,6 +144,8 @@ interface ReportDocumentProps {
   reviewerNotes: string | null;
   narrative: string | null;
   noIssuerDetected: boolean;
+  financials: CoinFinancials | null;
+  lowStablecoinDisclosure: boolean;
   createdAt: string;
   analystName: string;
   reviewerName: string | null;
@@ -173,11 +193,15 @@ export function ReportDocument({
   reviewerNotes,
   narrative,
   noIssuerDetected,
+  financials,
+  lowStablecoinDisclosure,
   createdAt,
   analystName,
   reviewerName,
   groups,
 }: ReportDocumentProps) {
+  const fmtM = (n: number | null) =>
+    n == null ? "—" : n >= 1e9 ? `$${(n / 1e9).toFixed(2)}B` : `$${(n / 1e6).toFixed(0)}M`;
   return (
     <Document
       title={`MiCA Assessment — ${tokenName}`}
@@ -257,6 +281,23 @@ export function ReportDocument({
           </View>
         )}
 
+        {lowStablecoinDisclosure && (
+          <View style={styles.cautionNote}>
+            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, marginBottom: 4, color: "#78350f" }}>
+              Low score does not mean currently prohibited from EU trading
+            </Text>
+            <Text style={{ fontSize: 7.5, color: "#78350f", lineHeight: 1.5 }}>
+              This token&apos;s Reserve of Assets and/or ART Prudential &amp; Recovery Requirements groups scored
+              below 50%, meaning the whitepaper document itself does not contain the disclosures MiCA Title III
+              requires. That is a statement about this document, not a ruling on the token&apos;s live market
+              status — pre-existing tokens may fall under the Art. 143 transitional (&quot;grandfathering&quot;)
+              regime, and any exchange listing decision is the CASP&apos;s own compliance call, made independently
+              of this whitepaper&apos;s score. Confirm current authorisation status against the ESMA/NCA MiCA
+              registers before treating this score as a market-availability verdict.
+            </Text>
+          </View>
+        )}
+
         {narrative && (
           <View style={{ marginBottom: 16 }}>
             <Text style={{ fontFamily: "Helvetica-Bold", marginBottom: 6 }}>Compliance Summary</Text>
@@ -288,6 +329,36 @@ export function ReportDocument({
             );
           })}
         </View>
+
+        {financials && (
+          <View style={{ ...styles.marketContext, marginTop: 16 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, color: "#0f172a" }}>
+                Market Context — {financials.name} ({financials.symbol})
+              </Text>
+              <Text style={{ fontSize: 6.5, color: "#94a3b8" }}>CoinGecko · informational only</Text>
+            </View>
+            <View style={{ flexDirection: "row", gap: 16, marginBottom: 6 }}>
+              <Text style={{ fontSize: 7.5, color: "#475569" }}>Market Cap: {fmtM(financials.market_cap_usd)}</Text>
+              <Text style={{ fontSize: 7.5, color: "#475569" }}>24h Volume: {fmtM(financials.volume_24h_usd)}</Text>
+              <Text style={{ fontSize: 7.5, color: "#475569" }}>
+                Rank: {financials.market_cap_rank ? `#${financials.market_cap_rank}` : "—"}
+              </Text>
+              <Text style={{ fontSize: 7.5, color: "#475569" }}>
+                Exchanges: {financials.exchanges_listed ?? "—"}
+              </Text>
+            </View>
+            {mayPredateMicaArtEmt(financials) && (
+              <Text style={{ fontSize: 7, color: "#b45309", lineHeight: 1.5, marginBottom: 6 }}>
+                Possible transitional relief: genesis date ({financials.genesis_date}) predates MiCA Title
+                III&apos;s 30 June 2024 application date. If this token is an ART/EMT, it may fall under the
+                Art. 143(3)–(4) grandfathering regime rather than requiring immediate whitepaper compliance —
+                verify the issuer&apos;s actual transitional status manually.
+              </Text>
+            )}
+            <Text style={{ fontSize: 6.5, color: "#94a3b8", lineHeight: 1.5 }}>{MARKET_DATA_DISCLAIMER}</Text>
+          </View>
+        )}
 
         {reviewerNotes && (
           <View style={{ backgroundColor: "#fefce8", padding: 12, borderRadius: 6, borderWidth: 1, borderColor: "#fde047", marginTop: 8 }}>

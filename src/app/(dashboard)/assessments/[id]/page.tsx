@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DocumentSheet } from "@/components/assessment/DocumentSheet";
 import type { MicaGroupData } from "@/lib/ai/types";
+import type { CoinFinancials } from "@/lib/ai/coin-data";
 import Link from "next/link";
 
 interface Props {
@@ -65,6 +66,7 @@ export default async function AssessmentPage({ params }: Props) {
         aiStatus={assessment.aiStatus}
         initialGroups={initialGroups}
         initialNarrative={assessment.aiNarrative ?? null}
+        initialFinancials={assessment.aiFinancials as CoinFinancials | null}
         readOnly={readOnly}
       />
     </div>

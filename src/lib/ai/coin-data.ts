@@ -38,6 +38,29 @@ export interface CoinFinancials {
 
 const COINGECKO_BASE = "https://api.coingecko.com/api/v3";
 
+// Title III (ART/EMT) became applicable on 30 June 2024. A token already in
+// circulation before that date may fall under the Art. 143(3)-(4) transitional
+// regime — issuers get a grace period to seek authorisation rather than an
+// instant compliance requirement. This is a hint for manual review, not a
+// determination: it doesn't establish token type (ART/EMT vs. utility), nor
+// whether the issuer has actually taken the steps the transitional regime
+// requires. Never treat this — or any field in this module — as a compliance
+// verdict; CoinGecko is a market-data aggregator, not a regulator, and has no
+// visibility into an issuer's MiCA authorisation status.
+export const MICA_ART_EMT_APPLICATION_DATE = "2024-06-30";
+
+export function mayPredateMicaArtEmt(f: Pick<CoinFinancials, "genesis_date">): boolean {
+  return !!f.genesis_date && f.genesis_date < MICA_ART_EMT_APPLICATION_DATE;
+}
+
+export const MARKET_DATA_DISCLAIMER =
+  "Market presence is not a compliance signal. A token trading on EU-facing exchanges " +
+  "may be relying on MiCA's Art. 143 transitional (\"grandfathering\") regime, may be " +
+  "traded via a venue or route outside MiCA's scope, or the exchange may simply not yet " +
+  "have acted on a whitepaper deficiency — none of that is verifiable from CoinGecko data. " +
+  "Confirm current regulatory status against the ESMA and national NCA MiCA registers " +
+  "before drawing any conclusion about legal tradability from this card.";
+
 interface CgSearchCoin {
   id:               string;
   name:             string;

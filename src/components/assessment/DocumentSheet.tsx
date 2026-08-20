@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { MICA_GROUPS } from "@/lib/ai/mica-groups";
 import { overallScore as calcWeightedScore, noIssuerDetected as deriveNoIssuer } from "@/lib/ai/scoring";
 import type { MicaGroupData, MicaItemFinding } from "@/lib/ai/types";
+import { mayPredateMicaArtEmt, MARKET_DATA_DISCLAIMER } from "@/lib/ai/coin-data";
 import type { CoinFinancials } from "@/lib/ai/coin-data";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -20,13 +21,14 @@ interface StreamEvent {
 }
 
 interface DocumentSheetProps {
-  assessmentId:     string;
-  tokenName:        string;
-  pdfName:          string | null;
-  aiStatus:         string;
-  initialGroups:    Partial<Record<string, MicaGroupData>>;
-  initialNarrative: string | null;
-  readOnly?:        boolean;
+  assessmentId:      string;
+  tokenName:         string;
+  pdfName:           string | null;
+  aiStatus:          string;
+  initialGroups:     Partial<Record<string, MicaGroupData>>;
+  initialNarrative:  string | null;
+  initialFinancials?: CoinFinancials | null;
+  readOnly?:         boolean;
 }
 
 // ── Status icon ───────────────────────────────────────────────────────────────
@@ -307,6 +309,32 @@ function FinancialCard({ f }: { f: CoinFinancials }) {
           )}
         </div>
       )}
+
+      {mayPredateMicaArtEmt(f) && (
+        <div className="mt-3 pt-3 border-t border-stone-200">
+          <p className="text-xs text-amber-700">
+            <span className="font-semibold">Possible transitional relief:</span> genesis date
+            ({f.genesis_date}) predates MiCA Title III's 30 June 2024 application date. If this
+            token is an ART/EMT, it may fall under the Art. 143(3)–(4) grandfathering regime
+            rather than needing immediate whitepaper compliance — verify the issuer's actual
+            transitional status manually, this is not derivable from market data.
+          </p>
+        </div>
+      )}
+
+      <div className="mt-3 pt-3 border-t border-stone-200">
+        <p className="text-[10px] leading-relaxed text-stone-400">
+          {MARKET_DATA_DISCLAIMER}{" "}
+          <a
+            href="https://www.esma.europa.eu/"
+            target="_blank"
+            rel="noreferrer"
+            className="underline hover:text-stone-600"
+          >
+            ESMA ↗
+          </a>
+        </p>
+      </div>
     </div>
   );
 }
@@ -375,12 +403,13 @@ export function DocumentSheet({
   aiStatus:         initialAiStatus,
   initialGroups,
   initialNarrative,
+  initialFinancials,
   readOnly,
 }: DocumentSheetProps) {
   const [groups,      setGroups]      = useState<Partial<Record<string, MicaGroupData>>>(initialGroups);
   const [revealTimes, setRevealTimes] = useState<Partial<Record<string, number>>>({});
   const [narrative,   setNarrative]   = useState<string | null>(initialNarrative);
-  const [financials,  setFinancials]  = useState<CoinFinancials | null>(null);
+  const [financials,  setFinancials]  = useState<CoinFinancials | null>(initialFinancials ?? null);
   const [fetchingMkt, setFetchingMkt] = useState(false);
   const [aiStatus,    setAiStatus]    = useState(initialAiStatus);
   const [error,       setError]       = useState<string | null>(null);

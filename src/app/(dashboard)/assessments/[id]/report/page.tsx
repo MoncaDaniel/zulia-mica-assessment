@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { MICA_GROUPS } from "@/lib/ai/mica-groups";
 import { scoreGroup, noIssuerDetected } from "@/lib/ai/scoring";
+import { mayPredateMicaArtEmt, MARKET_DATA_DISCLAIMER } from "@/lib/ai/coin-data";
 import type { MicaGroupData, MicaItemFinding } from "@/lib/ai/types";
+import type { CoinFinancials } from "@/lib/ai/coin-data";
 import { formatDate, formatScore, scoreToColor, cn } from "@/lib/utils";
 
 interface Props {
@@ -52,6 +54,63 @@ function ItemDisplay({ label, articleRef, finding }: { label: string; articleRef
   );
 }
 
+function MarketContextCard({ f }: { f: CoinFinancials }) {
+  const fmtM = (n: number | null) =>
+    n === null ? "—" : n >= 1e9 ? `$${(n / 1e9).toFixed(2)}B` : `$${(n / 1e6).toFixed(0)}M`;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-white">Market Context</h3>
+          <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+            CoinGecko · informational only
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: "Market Cap",   value: fmtM(f.market_cap_usd) },
+            { label: "24h Volume",   value: fmtM(f.volume_24h_usd) },
+            { label: "Rank",         value: f.market_cap_rank ? `#${f.market_cap_rank}` : "—" },
+            { label: "Exchanges",    value: f.exchanges_listed ?? "—" },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</p>
+              <p className="text-sm font-semibold text-slate-200 mt-0.5">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        {mayPredateMicaArtEmt(f) && (
+          <div className="mt-4 p-3 bg-amber-900/20 border border-amber-800 rounded-lg">
+            <p className="text-xs text-amber-300">
+              <span className="font-semibold">Possible transitional relief:</span> genesis date
+              ({f.genesis_date}) predates MiCA Title III&apos;s 30 June 2024 application date. If
+              this token is an ART/EMT, it may fall under the Art. 143(3)–(4) grandfathering
+              regime rather than requiring immediate whitepaper compliance — verify the issuer&apos;s
+              actual transitional status manually.
+            </p>
+          </div>
+        )}
+
+        <p className="mt-4 text-[11px] leading-relaxed text-slate-500">
+          {MARKET_DATA_DISCLAIMER}{" "}
+          <a
+            href="https://www.esma.europa.eu/"
+            target="_blank"
+            rel="noreferrer"
+            className="underline hover:text-slate-300"
+          >
+            ESMA ↗
+          </a>
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function ReportPage({ params }: Props) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
@@ -83,6 +142,25 @@ export default async function ReportPage({ params }: Props) {
   });
 
   const isExempt = noIssuerDetected(groupMap);
+
+  const financials = assessment.aiFinancials as unknown as CoinFinancials | null;
+
+  // Low disclosure score on the ART/EMT-specific groups doesn't, by itself,
+  // mean the token is currently prohibited from EU trading -- Art. 143's
+  // transitional regime and each CASP's own listing decision are separate
+  // legal questions from "does this whitepaper document meet current
+  // disclosure requirements". Surfaced as a caveat so the score isn't
+  // misread as a market-availability verdict.
+  const reservesData    = groupMap["g09_reserves"];
+  const prudentialData  = groupMap["g13_art_prudential"];
+  const isStablecoinFlow =
+    (!!reservesData   && Object.values(reservesData).some((it) => it.status !== "na")) ||
+    (!!prudentialData && Object.values(prudentialData).some((it) => it.status !== "na"));
+  const reservesScore   = reservesData   ? scoreGroup(reservesData)   : null;
+  const prudentialScore = prudentialData ? scoreGroup(prudentialData) : null;
+  const lowStablecoinDisclosure =
+    isStablecoinFlow &&
+    ((reservesScore !== null && reservesScore < 0.5) || (prudentialScore !== null && prudentialScore < 0.5));
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -198,6 +276,24 @@ export default async function ReportPage({ params }: Props) {
             </div>
           )}
 
+          {lowStablecoinDisclosure && (
+            <div className="mt-4 p-4 bg-amber-900/20 border border-amber-800 rounded-lg">
+              <p className="text-sm font-medium text-amber-300 mb-1">
+                Low score ≠ currently prohibited from EU trading
+              </p>
+              <p className="text-sm text-amber-200">
+                This token&apos;s Reserve of Assets and/or ART Prudential &amp; Recovery Requirements
+                groups scored below 50%, meaning the whitepaper document itself doesn&apos;t contain the
+                disclosures MiCA Title III requires. That is a statement about this document, not a
+                ruling on the token&apos;s live market status — pre-existing tokens may fall under the
+                Art. 143 transitional (&quot;grandfathering&quot;) regime, and any exchange listing decision is
+                the CASP&apos;s own compliance call, made independently of this whitepaper&apos;s score.
+                Confirm current authorisation status against the ESMA/NCA MiCA registers before treating
+                this score as a market-availability verdict.
+              </p>
+            </div>
+          )}
+
           {assessment.aiNarrative && (
             <div className="mt-4 p-4 bg-slate-800/50 border border-slate-700 rounded-lg">
               <p className="text-sm font-medium text-slate-300 mb-1">Compliance Summary</p>
@@ -213,6 +309,8 @@ export default async function ReportPage({ params }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {financials && <MarketContextCard f={financials} />}
 
       {/* Group details */}
       {groupsWithScores.map(({ def, data, score }) => {

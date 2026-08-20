@@ -82,6 +82,14 @@ export async function POST(
           ? `$${(financials.market_cap_usd / 1e6).toFixed(0)}M`
           : "cap unknown";
         console.log(`[analyze]            CoinGecko: ${financials.name} (${financials.symbol}) · rank #${financials.market_cap_rank ?? "?"} · ${capStr}`);
+
+        // Persisted immediately (awaited, same reasoning as the onNarrative/
+        // onDone writes below): this snapshot must survive even if the AI
+        // extraction stalls or the function is torn down before onDone runs,
+        // so the report page still has market context to show.
+        await prisma.assessment
+          .update({ where: { id: params.id }, data: { aiFinancials: financials as object } })
+          .catch((e) => console.error(`[analyze] Financials persist failed:`, e));
       } else {
         console.log(`[analyze]            CoinGecko: no match`);
       }
