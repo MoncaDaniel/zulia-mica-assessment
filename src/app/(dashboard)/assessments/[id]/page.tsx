@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DocumentSheet } from "@/components/assessment/DocumentSheet";
+import ReviewActions from "./ReviewActions";
 import type { MicaGroupData } from "@/lib/ai/types";
 import type { CoinFinancials } from "@/lib/ai/coin-data";
 import Link from "next/link";
@@ -25,6 +26,10 @@ export default async function AssessmentPage({ params }: Props) {
     assessment.status === "SUBMITTED" ||
     assessment.status === "APPROVED" ||
     (assessment.status === "REJECTED" && session.user.role === "REVIEWER");
+
+  const canReview =
+    assessment.status === "SUBMITTED" &&
+    (session.user.role === "REVIEWER" || session.user.role === "ADMIN");
 
   // Reconstruct group data from DB sections
   const initialGroups: Partial<Record<string, MicaGroupData>> = {};
@@ -58,6 +63,15 @@ export default async function AssessmentPage({ params }: Props) {
           )}
         </div>
       </div>
+
+      {canReview && (
+        <div className="px-6 py-4 border-b border-slate-800 bg-amber-500/5">
+          <p className="text-xs font-medium text-amber-400 mb-3 uppercase tracking-wide">
+            Pending review
+          </p>
+          <ReviewActions assessmentId={params.id} />
+        </div>
+      )}
 
       <DocumentSheet
         assessmentId={params.id}
