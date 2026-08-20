@@ -5,6 +5,7 @@ import { StatusBadge, FlagBadge } from "./StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { formatDate, formatScore, scoreToColor, cn } from "@/lib/utils";
+import { MICA_GROUPS } from "@/lib/ai/mica-groups";
 
 interface Assessment {
   id: string;
@@ -129,7 +130,7 @@ export function AssessmentTable({ assessments, userRole, onDelete }: AssessmentT
             <tbody className="divide-y divide-slate-800">
               {filtered.map((a) => {
                 const completedCount = a.sections.filter((s) => s.completedAt).length;
-                const progressPct = Math.round((completedCount / 10) * 100);
+                const progressPct = Math.round((completedCount / MICA_GROUPS.length) * 100);
                 const listedPublicly = listedOverrides[a.id] ?? a.listedPublicly;
 
                 return (
@@ -161,7 +162,7 @@ export function AssessmentTable({ assessments, userRole, onDelete }: AssessmentT
                             style={{ width: `${progressPct}%` }}
                           />
                         </div>
-                        <span className="text-xs text-slate-500">{completedCount}/10</span>
+                        <span className="text-xs text-slate-500">{completedCount}/{MICA_GROUPS.length}</span>
                       </div>
                     </td>
                     <td className="py-4 pr-4">

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { computeOverallScore, scoreToFlag, SECTION_WEIGHTS } from "@/lib/scoring";
 
 export async function POST(
   _req: NextRequest,
@@ -13,7 +12,6 @@ export async function POST(
 
   const assessment = await prisma.assessment.findUnique({
     where: { id: params.id },
-    include: { sections: true },
   });
 
   if (!assessment) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -21,22 +19,12 @@ export async function POST(
     return NextResponse.json({ error: "Only DRAFT or REJECTED assessments can be submitted" }, { status: 409 });
   }
 
-  // Compute overall score from saved section scores
-  const sectionScores: Partial<Record<string, number | null>> = {};
-  for (const section of assessment.sections) {
-    sectionScores[section.sectionKey] = section.sectionScore;
-  }
-
-  const overallScore = computeOverallScore(sectionScores);
-  const flag = scoreToFlag(overallScore);
-
+  // overallScore/flag are already computed by the AI extraction pipeline
+  // (src/lib/ai/scoring.ts, run during /analyze) — submission is a pure
+  // status transition and must not recompute or touch them.
   const updated = await prisma.assessment.update({
     where: { id: params.id },
-    data: {
-      status: "SUBMITTED",
-      overallScore,
-      flag,
-    },
+    data: { status: "SUBMITTED" },
   });
 
   await prisma.auditLog.create({
@@ -44,7 +32,7 @@ export async function POST(
       assessmentId: params.id,
       userId: session.user.id,
       action: "SUBMITTED",
-      metadata: { overallScore, flag },
+      metadata: { overallScore: assessment.overallScore, flag: assessment.flag },
     },
   });
 

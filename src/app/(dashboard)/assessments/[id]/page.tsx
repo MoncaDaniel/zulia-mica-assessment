@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DocumentSheet } from "@/components/assessment/DocumentSheet";
 import ReviewActions from "./ReviewActions";
+import SubmitButton from "./SubmitButton";
 import type { MicaGroupData } from "@/lib/ai/types";
 import type { CoinFinancials } from "@/lib/ai/coin-data";
 import Link from "next/link";
@@ -31,6 +32,10 @@ export default async function AssessmentPage({ params }: Props) {
     assessment.status === "SUBMITTED" &&
     (session.user.role === "REVIEWER" || session.user.role === "ADMIN");
 
+  const canSubmit =
+    (assessment.status === "DRAFT" || assessment.status === "REJECTED") &&
+    assessment.aiStatus === "COMPLETED";
+
   // Reconstruct group data from DB sections
   const initialGroups: Partial<Record<string, MicaGroupData>> = {};
   for (const section of assessment.sections) {
@@ -54,6 +59,7 @@ export default async function AssessmentPage({ params }: Props) {
           <span className="text-slate-500 text-xs">{assessment.ticker}</span>
         )}
         <div className="ml-auto flex items-center gap-2">
+          {canSubmit && <SubmitButton assessmentId={params.id} />}
           {assessment.status === "APPROVED" && (
             <a href={`/api/assessments/${params.id}/export`} target="_blank" rel="noreferrer">
               <button className="px-3 py-1.5 text-xs rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500 transition-colors">
