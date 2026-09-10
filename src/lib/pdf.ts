@@ -26,7 +26,10 @@ export interface PDFAssessmentData {
   }>;
 }
 
-export async function generateAssessmentPDF(assessment: PDFAssessmentData): Promise<Buffer> {
+export async function generateAssessmentPDF(
+  assessment: PDFAssessmentData,
+  opts: { publicMode?: boolean } = {},
+): Promise<Buffer> {
   const groupMap: Partial<Record<string, MicaGroupData>> = {};
   for (const s of assessment.sections) {
     if (s.aiData) groupMap[s.sectionKey] = s.aiData as MicaGroupData;
@@ -78,6 +81,7 @@ export async function generateAssessmentPDF(assessment: PDFAssessmentData): Prom
     analystName: assessment.createdBy.name,
     reviewerName: assessment.reviewedBy?.name ?? null,
     groups: groupsWithDefs,
+    publicMode: opts.publicMode ?? false,
   });
 
   return renderToBuffer(element);

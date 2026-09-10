@@ -52,7 +52,16 @@ const styles = StyleSheet.create({
   itemBody: { flex: 1 },
   itemLabel: { fontSize: 8, color: "#1e293b" },
   itemArticle: { fontSize: 6.5, color: "#94a3b8", marginTop: 1 },
-  itemExcerpt: { fontSize: 7.5, color: "#64748b", fontStyle: "italic", marginTop: 2 },
+  itemExcerpt: {
+    fontSize: 7.5,
+    color: "#64748b",
+    fontStyle: "italic",
+    marginTop: 2,
+    paddingLeft: 6,
+    borderLeftWidth: 1.5,
+    borderLeftColor: "#cbd5e1",
+    lineHeight: 1.4,
+  },
   itemReasoning: { fontSize: 7, color: "#94a3b8", marginTop: 2 },
   scoreTable: {
     marginBottom: 20,
@@ -150,7 +159,27 @@ interface ReportDocumentProps {
   analystName: string;
   reviewerName: string | null;
   groups: ReportGroup[];
+  // When true the report is being handed to an external visitor (the free
+  // public flow) rather than kept for internal review — drops "CONFIDENTIAL"
+  // framing and adds an author/contact line.
+  publicMode?: boolean;
 }
+
+const AUTHOR_NAME = "Daniel Moncada";
+const AUTHOR_LINK = "linkedin.com/in/daniel-moncada-leon";
+
+const fmtNum = (n: number | null | undefined) => {
+  if (n == null) return "—";
+  if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  return n.toLocaleString("en-US");
+};
+const fmtUsd = (n: number | null | undefined) => {
+  if (n == null) return "—";
+  if (n < 0.01 && n > 0) return `$${n.toFixed(6)}`;
+  if (n < 1) return `$${n.toFixed(4)}`;
+  return `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+};
 
 function scoreColor(score: number | null): string {
   if (score == null) return "#94a3b8";
@@ -174,10 +203,10 @@ function ItemStatus({ finding }: { finding: MicaItemFinding | null }) {
   return <Text style={[styles.itemIcon, { color: "#d97706" }]}>[?]</Text>;
 }
 
-function PageFooter({ tokenName }: { tokenName: string }) {
+function PageFooter({ tokenName, publicMode }: { tokenName: string; publicMode?: boolean }) {
   return (
     <View style={styles.pageFooter} fixed>
-      <Text>CONFIDENTIAL — MiCA ESMA Assessment Tool</Text>
+      <Text>{publicMode ? "MiCA ESMA Assessment Tool" : "CONFIDENTIAL — MiCA ESMA Assessment Tool"}</Text>
       <Text>{tokenName}</Text>
       <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} fixed />
     </View>
@@ -199,6 +228,7 @@ export function ReportDocument({
   analystName,
   reviewerName,
   groups,
+  publicMode,
 }: ReportDocumentProps) {
   const fmtM = (n: number | null) =>
     n == null ? "—" : n >= 1e9 ? `$${(n / 1e9).toFixed(2)}B` : `$${(n / 1e6).toFixed(0)}M`;
@@ -232,15 +262,25 @@ export function ReportDocument({
 
             <View style={{ marginTop: 32, gap: 4 }}>
               <Text style={styles.coverMeta}>Assessment Date: {createdAt}</Text>
-              <Text style={styles.coverMeta}>Analyst: {analystName}</Text>
-              {reviewerName && <Text style={styles.coverMeta}>Reviewer: {reviewerName}</Text>}
-              <Text style={styles.coverMeta}>Status: {status}</Text>
+              {publicMode ? (
+                <>
+                  <Text style={styles.coverMeta}>Prepared by: {AUTHOR_NAME}</Text>
+                  <Text style={styles.coverMeta}>{AUTHOR_LINK}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.coverMeta}>Analyst: {analystName}</Text>
+                  {reviewerName && <Text style={styles.coverMeta}>Reviewer: {reviewerName}</Text>}
+                  <Text style={styles.coverMeta}>Status: {status}</Text>
+                </>
+              )}
             </View>
           </View>
 
           <Text style={styles.coverFooter}>
-            CONFIDENTIAL — This report has been prepared for internal compliance purposes only.
-            It does not constitute legal or investment advice.
+            {publicMode
+              ? "Automated MiCA whitepaper analysis. This report does not constitute legal or investment advice — verify against the official ESMA and national NCA MiCA registers before relying on it."
+              : "CONFIDENTIAL — This report has been prepared for internal compliance purposes only. It does not constitute legal or investment advice."}
           </Text>
         </View>
       </Page>
@@ -332,22 +372,46 @@ export function ReportDocument({
 
         {financials && (
           <View style={{ ...styles.marketContext, marginTop: 16 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 8, color: "#0f172a" }}>
-                Market Context — {financials.name} ({financials.symbol})
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+              <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 9, color: "#0f172a" }}>
+                Tokenomics &amp; Market Data — {financials.name} ({financials.symbol})
               </Text>
               <Text style={{ fontSize: 6.5, color: "#94a3b8" }}>CoinGecko · informational only</Text>
             </View>
-            <View style={{ flexDirection: "row", gap: 16, marginBottom: 6 }}>
-              <Text style={{ fontSize: 7.5, color: "#475569" }}>Market Cap: {fmtM(financials.market_cap_usd)}</Text>
-              <Text style={{ fontSize: 7.5, color: "#475569" }}>24h Volume: {fmtM(financials.volume_24h_usd)}</Text>
-              <Text style={{ fontSize: 7.5, color: "#475569" }}>
-                Rank: {financials.market_cap_rank ? `#${financials.market_cap_rank}` : "—"}
+
+            {(() => {
+              const rows: [string, string][] = [
+                ["Price", fmtUsd(financials.price_usd)],
+                ["Market cap", fmtM(financials.market_cap_usd)],
+                ["Market cap rank", financials.market_cap_rank ? `#${financials.market_cap_rank}` : "—"],
+                ["24h volume", fmtM(financials.volume_24h_usd)],
+                ["30d price change", financials.price_change_30d_pct != null ? `${financials.price_change_30d_pct.toFixed(1)}%` : "—"],
+                ["All-time high", fmtUsd(financials.ath_usd)],
+                ["Circulating supply", fmtNum(financials.circulating_supply)],
+                ["Total supply", fmtNum(financials.total_supply)],
+                ["Max supply", financials.max_supply ? fmtNum(financials.max_supply) : "Uncapped / not stated"],
+                ["Exchanges listed", financials.exchanges_listed != null ? String(financials.exchanges_listed) : "—"],
+                ["Genesis date", financials.genesis_date ?? "—"],
+                ["Art. 43 significance (>€5B cap)", financials.is_significant_token ? "Yes — significant-token rules may apply" : "No — below threshold"],
+              ];
+              return (
+                <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                  {rows.map(([k, v]) => (
+                    <View key={k} style={{ width: "33.3%", marginBottom: 6, paddingRight: 6 }}>
+                      <Text style={{ fontSize: 6.5, color: "#94a3b8" }}>{k}</Text>
+                      <Text style={{ fontSize: 8, color: "#334155", fontFamily: "Helvetica-Bold" }}>{v}</Text>
+                    </View>
+                  ))}
+                </View>
+              );
+            })()}
+
+            {financials.categories.length > 0 && (
+              <Text style={{ fontSize: 7, color: "#64748b", marginTop: 2, marginBottom: 6 }}>
+                Categories: {financials.categories.join(", ")}
               </Text>
-              <Text style={{ fontSize: 7.5, color: "#475569" }}>
-                Exchanges: {financials.exchanges_listed ?? "—"}
-              </Text>
-            </View>
+            )}
+
             {mayPredateMicaArtEmt(financials) && (
               <Text style={{ fontSize: 7, color: "#b45309", lineHeight: 1.5, marginBottom: 6 }}>
                 Possible transitional relief: genesis date ({financials.genesis_date}) predates MiCA Title
@@ -367,7 +431,7 @@ export function ReportDocument({
           </View>
         )}
 
-        <PageFooter tokenName={tokenName} />
+        <PageFooter tokenName={tokenName} publicMode={publicMode} />
       </Page>
 
       {/* One page per compliance group */}
@@ -410,9 +474,16 @@ export function ReportDocument({
                       <Text style={styles.itemExcerpt}>&ldquo;{item.finding.excerpt}&rdquo;</Text>
                     )}
                     {item.finding?.status === "not_found" && (
-                      <Text style={{ ...styles.itemExcerpt, color: "#dc2626", fontStyle: "normal" }}>
-                        Not found in whitepaper
-                      </Text>
+                      <>
+                        <Text style={{ ...styles.itemExcerpt, color: "#dc2626", fontStyle: "normal" }}>
+                          Not found in whitepaper
+                        </Text>
+                        {item.finding.excerpt && (
+                          <Text style={styles.itemExcerpt}>
+                            Closest language: &ldquo;{item.finding.excerpt}&rdquo;
+                          </Text>
+                        )}
+                      </>
                     )}
                     {item.finding?.status === "na" && (
                       <Text style={styles.itemExcerpt}>Not applicable</Text>
@@ -425,7 +496,7 @@ export function ReportDocument({
               ))
             )}
 
-            <PageFooter tokenName={tokenName} />
+            <PageFooter tokenName={tokenName} publicMode={publicMode} />
           </Page>
         );
       })}
@@ -479,16 +550,18 @@ export function ReportDocument({
 
         <View style={{ marginTop: 40, paddingTop: 24, borderTopWidth: 1, borderTopColor: "#e2e8f0" }}>
           <Text style={{ fontSize: 8, color: "#94a3b8" }}>
-            This report was prepared by {analystName} on {createdAt}.
-            {reviewerName ? ` Reviewed by ${reviewerName}.` : ""}
+            {publicMode
+              ? `Prepared by ${AUTHOR_NAME} · ${AUTHOR_LINK} · ${createdAt}`
+              : `This report was prepared by ${analystName} on ${createdAt}.${reviewerName ? ` Reviewed by ${reviewerName}.` : ""}`}
           </Text>
           <Text style={{ fontSize: 7, color: "#cbd5e1", marginTop: 8 }}>
-            DISCLAIMER: This assessment is for internal compliance purposes only and does not constitute legal, financial, or investment advice.
-            No liability is accepted for decisions made on the basis of this report.
+            {publicMode
+              ? "DISCLAIMER: This is an automated analysis of the whitepaper text and public market data. It does not constitute legal, financial, or investment advice, and it is not a determination of MiCA compliance by any competent authority. Verify against the official ESMA and national NCA MiCA registers before relying on it."
+              : "DISCLAIMER: This assessment is for internal compliance purposes only and does not constitute legal, financial, or investment advice. No liability is accepted for decisions made on the basis of this report."}
           </Text>
         </View>
 
-        <PageFooter tokenName={tokenName} />
+        <PageFooter tokenName={tokenName} publicMode={publicMode} />
       </Page>
     </Document>
   );

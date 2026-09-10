@@ -40,9 +40,17 @@ const ITEM_SCHEMA = {
   type: "object",
   properties: {
     status:     { type: "string", enum: ["found", "not_found", "na", ""] },
-    excerpt:    { type: "string", description: "Direct quote from the whitepaper (max 150 chars). Empty if status is not 'found'." },
+    excerpt:    {
+      type: "string",
+      description:
+        "Verbatim quote(s) from the whitepaper, copied exactly (no paraphrasing), that this decision rests on. " +
+        "Prefer a complete sentence or two — up to ~600 characters — and include a section or page locator when the " +
+        "document has one, e.g. \"(§4.2)\" or \"(p. 12)\". For status \"found\": the passage that satisfies the requirement. " +
+        "For status \"not_found\": the closest related language in the document, if any (so the reader can see what IS " +
+        "there and why it falls short) — leave empty only if the topic is entirely absent. Empty for \"na\" and \"\".",
+    },
     confidence: { type: "number", minimum: 0, maximum: 1 },
-    reasoning:  { type: "string", description: "One sentence explaining why this status was assigned and what evidence (or lack of it) supports the decision." },
+    reasoning:  { type: "string", description: "One or two sentences explaining why this status was assigned and how the quoted evidence (or its absence) supports the decision." },
   },
   required: ["status", "excerpt", "confidence", "reasoning"],
 } as const;
@@ -144,7 +152,9 @@ async function runBatch(
 
   const claudeStream = anthropic.messages.stream({
     model: AI_MODEL,
-    max_tokens: 6000,
+    // Headroom for longer verbatim excerpts (see ITEM_SCHEMA) so a batch
+    // doesn't truncate at max_tokens, which would throw below.
+    max_tokens: 8000,
     temperature: 0,
     system: [
       {
@@ -166,6 +176,13 @@ async function runBatch(
   // picked up by the post-finalMessage fallback below instead.
   let jsonBuffer = "";
   let emittedCount = 0;
+  // Keys actually handed to callbacks.onGroup during streaming. The
+  // post-finalMessage fallback below fills in whatever isn't in here — a
+  // Set rather than a tail-slice on emittedCount, because Claude doesn't
+  // always write the groups in batch order, so a middle group can be
+  // skipped while later ones stream fine (this dropped g13, and
+  // occasionally g01, before the fix).
+  const emittedKeys = new Set<string>();
   // callbacks.onGroup can't be awaited directly inside the (synchronous)
   // "inputJson" event handler, so its promises are collected here and
   // awaited before this function returns -- otherwise, in a serverless
@@ -198,6 +215,7 @@ async function runBatch(
               (allNA ? "  (all N/A)" : ""),
             );
             console.log(`[extraction] ┌ ${pad(nextKey, 20)} ${MICA_GROUP_MAP[nextKey]?.label ?? ""}`);
+            emittedKeys.add(key);
             pendingOnGroup.push(Promise.resolve(callbacks.onGroup(key, data)));
           } catch {
             console.warn(`[extraction] └ ${key}  ✗  parse error`);
@@ -221,9 +239,10 @@ async function runBatch(
 
   const raw = toolBlock.input as Record<string, unknown>;
 
-  // Fallback: emit groups not caught during streaming (always includes at
-  // least this batch's last group, by design).
-  const fallbackGroups = batchGroupKeys.slice(emittedCount);
+  // Fallback: emit every group in this batch that streaming didn't already
+  // hand off — the batch's last group by design, plus any that were skipped
+  // because Claude wrote the groups out of batch order.
+  const fallbackGroups = batchGroupKeys.filter((k) => !emittedKeys.has(k));
   for (const key of fallbackGroups) {
     const data = raw[key] as MicaGroupData | undefined;
     if (data) {

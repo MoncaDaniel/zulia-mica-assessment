@@ -29,6 +29,13 @@ interface DocumentSheetProps {
   initialNarrative:  string | null;
   initialFinancials?: CoinFinancials | null;
   readOnly?:         boolean;
+  // Which endpoint the live analysis stream POSTs to. Defaults to the
+  // authenticated route; the public/free flow passes its own.
+  analyzeEndpoint?:  string;
+  // Fired once analysis is finished (either it just completed on the stream,
+  // or it was already COMPLETED on mount). Lets a parent reveal a
+  // "download PDF" action without re-implementing the stream.
+  onComplete?:       () => void;
 }
 
 // ── Status icon ───────────────────────────────────────────────────────────────
@@ -126,12 +133,19 @@ function ItemRow({
         </div>
 
         {finding?.status === "found" && finding.excerpt && (
-          <p className="mt-1.5 text-xs text-stone-500 italic leading-relaxed">
+          <p className="mt-1.5 border-l-2 border-emerald-200 pl-2.5 text-xs italic leading-relaxed text-stone-500">
             &ldquo;{finding.excerpt}&rdquo;
           </p>
         )}
         {finding?.status === "not_found" && (
-          <p className="mt-1 text-xs text-red-400">Not found in whitepaper</p>
+          <>
+            <p className="mt-1 text-xs text-red-400">Not found in whitepaper</p>
+            {finding.excerpt && (
+              <p className="mt-1 border-l-2 border-stone-200 pl-2.5 text-xs italic leading-relaxed text-stone-400">
+                Closest language: &ldquo;{finding.excerpt}&rdquo;
+              </p>
+            )}
+          </>
         )}
         {finding?.status === "na" && (
           <p className="mt-1 text-xs text-stone-400">Not applicable</p>
@@ -405,7 +419,10 @@ export function DocumentSheet({
   initialNarrative,
   initialFinancials,
   readOnly,
+  analyzeEndpoint,
+  onComplete,
 }: DocumentSheetProps) {
+  const streamUrl = analyzeEndpoint ?? `/api/assessments/${assessmentId}/analyze`;
   const [groups,      setGroups]      = useState<Partial<Record<string, MicaGroupData>>>(initialGroups);
   const [revealTimes, setRevealTimes] = useState<Partial<Record<string, number>>>({});
   const [narrative,   setNarrative]   = useState<string | null>(initialNarrative);
@@ -414,6 +431,11 @@ export function DocumentSheet({
   const [aiStatus,    setAiStatus]    = useState(initialAiStatus);
   const [error,       setError]       = useState<string | null>(null);
   const [tokens,      setTokens]      = useState<number | null>(null);
+
+  // Kept in a ref so a non-memoized parent callback doesn't churn the
+  // stream effect's dependencies (which would risk re-POSTing the analysis).
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   const completedGroups = Object.keys(groups).length;
   const totalGroups     = MICA_GROUPS.length;
@@ -450,6 +472,7 @@ export function DocumentSheet({
       case "done":
         setTokens(event.tokensUsed ?? null);
         setAiStatus("COMPLETED");
+        onCompleteRef.current?.();
         break;
       case "error":
         setError(event.message ?? "Analysis failed");
@@ -459,6 +482,10 @@ export function DocumentSheet({
   }, []);
 
   useEffect(() => {
+    if (initialAiStatus === "COMPLETED") onCompleteRef.current?.();
+  }, [initialAiStatus]);
+
+  useEffect(() => {
     if (readOnly) return;
     if (initialAiStatus === "COMPLETED" || initialAiStatus === "FAILED") return;
 
@@ -466,7 +493,7 @@ export function DocumentSheet({
 
     async function startStream() {
       try {
-        const res = await fetch(`/api/assessments/${assessmentId}/analyze`, {
+        const res = await fetch(streamUrl, {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    "{}",
@@ -507,7 +534,7 @@ export function DocumentSheet({
 
     startStream();
     return () => { controller.abort(); };
-  }, [assessmentId, initialAiStatus, readOnly, handleStreamEvent]);
+  }, [assessmentId, streamUrl, initialAiStatus, readOnly, handleStreamEvent]);
 
   const today = new Date().toLocaleDateString("en-GB", {
     day: "numeric", month: "long", year: "numeric",

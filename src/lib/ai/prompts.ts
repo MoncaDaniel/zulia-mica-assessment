@@ -7,9 +7,15 @@ Your task is to analyse a crypto-asset whitepaper and determine whether it satis
 
 For every item provide:
 - status: "found" | "not_found" | "na" | ""
-- excerpt: direct quote (max 150 chars) supporting a "found" decision. Empty otherwise.
+- excerpt: verbatim quote(s) from the whitepaper, copied exactly — never paraphrased. Prefer a full
+  sentence or two (up to ~600 characters) and add a section/page locator when the document has one,
+  e.g. "(§4.2)" or "(p. 12)". For "found": the passage that satisfies the requirement. For
+  "not_found": the closest related language actually present in the document, if any, so the reader
+  can see what is there and why it is insufficient — leave empty only when the topic is wholly
+  absent. Empty for "na" and "".
 - confidence: 0–1 reflecting clarity of evidence, NOT likelihood of compliance.
-- reasoning: one sentence explaining why you assigned this status.
+- reasoning: one or two sentences explaining why you assigned this status and how the quoted
+  evidence (or its absence) supports it.
 
 ## Status rules
 

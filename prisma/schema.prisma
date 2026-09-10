@@ -193,14 +193,57 @@ model AuditLog {
   timestamp DateTime @default(now())
 }
 
-// Captured from the public registry's "request an assessment" form — no
-// account, no auth. Standalone (no FK to Assessment/User) since the token
-// being asked about may not have any assessment yet. Viewed only via the
-// ADMIN-only /leads page; nothing here is ever exposed publicly.
+// Captured from the public registry's "request an assessment" form and from
+// the "request another free assessment" flow — no account, no auth.
+// Standalone (no FK to Assessment/User) since the token being asked about may
+// not have any assessment yet. Viewed only via the ADMIN-only /leads page;
+// nothing here is ever exposed publicly.
 model LeadRequest {
   id        String   @id @default(cuid())
   tokenName String?
   email     String
-  phone     String
+  phone     String?
+  note      String?  @db.Text          // free-text ("why", context) from the request form
+  // Salted SHA-256 of the requester's IP (see src/lib/anon.ts). Never the raw
+  // IP. Used only to de-duplicate spammy repeat requests, not to identify.
+  ipHash    String?
+  // NEW → CONTACTED (a run grant was issued) → CLOSED (handled/ignored).
+  status    String   @default("NEW")
+  grantedAt DateTime?                    // when a RunGrant was issued for this request
   createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([ipHash])
+  @@index([status, createdAt])
+}
+
+// One row per (salted, hashed) visitor IP that has run a free anonymous
+// assessment. The public flow lets each visitor run exactly one for free;
+// this table is the server-side backstop to the signed browser cookie, so
+// clearing cookies alone doesn't reset the allowance. Raw IPs are never
+// stored — only sha256(ip + IP_HASH_SALT). Rows older than the retention
+// window are purged (see src/lib/anon.ts).
+model AnonRun {
+  id               String   @id @default(cuid())
+  ipHash           String   @unique
+  runs             Int      @default(0)
+  lastAssessmentId String?
+  firstRunAt       DateTime @default(now())
+  lastRunAt        DateTime @updatedAt
+}
+
+// A single-use link that lets someone bypass the "one free assessment" gate
+// for one additional run. Issued by a REVIEWER/ADMIN from the /leads page in
+// response to an email request, then sent to the requester manually.
+model RunGrant {
+  id        String   @id @default(cuid())
+  token     String   @unique              // random, unguessable; embedded in the link
+  email     String                        // who it was issued to (informational)
+  note      String?
+  usedAt    DateTime?                      // set the first time it's redeemed
+  usedIpHash String?                       // which visitor redeemed it
+  createdAt DateTime @default(now())
+  expiresAt DateTime                       // hard expiry regardless of use
+
+  @@index([email])
 }
