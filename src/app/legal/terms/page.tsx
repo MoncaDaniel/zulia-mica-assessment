@@ -6,7 +6,7 @@ export default function TermsPage() {
   return (
     <>
       <h1 className="text-2xl font-bold font-display text-white mb-2">Terms of Use</h1>
-      <p className="text-xs text-slate-500 mb-8">Last updated: 13 August 2026</p>
+      <p className="text-xs text-slate-500 mb-8">Last updated: 10 September 2026</p>
 
       <section>
         <h2 className="text-base font-semibold text-white mt-8 mb-2">1. Acceptance of these terms</h2>
@@ -24,10 +24,13 @@ export default function TermsPage() {
         <p>
           The Service produces a compliance-oriented analysis of crypto-asset whitepapers against
           disclosure requirements under Regulation (EU) 2023/1114 (&ldquo;MiCA&rdquo;) and related
-          technical standards. Findings are generated with the assistance of an AI model, reviewed by
-          a human analyst before an assessment is marked Approved, and — only where an analyst
-          explicitly opts a specific assessment in — a limited summary (token name, ticker, overall
-          compliance flag, and review date) may be published to the public registry.
+          technical standards. Findings are generated with the assistance of an AI model. A free
+          assessment run from the public site is delivered to you as the AI produces it, without human
+          review. In the internal analyst workflow, findings are reviewed by a human analyst before an
+          assessment is marked Approved, and — only where an analyst explicitly opts a specific
+          assessment in — a limited summary (token name, ticker, overall compliance flag, and review
+          date) may be published to the public registry. Free public assessments are never added to
+          the registry.
         </p>
       </section>
 
@@ -69,12 +72,16 @@ export default function TermsPage() {
       </section>
 
       <section>
-        <h2 className="text-base font-semibold text-white mt-8 mb-2">6. Contact requests</h2>
+        <h2 className="text-base font-semibold text-white mt-8 mb-2">6. Free assessments and contact requests</h2>
         <p>
-          If you submit an email address and phone number through the &ldquo;request an
-          assessment&rdquo; form, you are asking us to contact you about that request. See our{" "}
-          <a href="/legal/privacy" className="text-brand-400 hover:underline">Privacy Policy</a> for how
-          that information is used and retained.
+          Anyone may run one free assessment without an account; further runs are issued on request.
+          To enforce that limit fairly and protect the Service from automated abuse we use a signed
+          cookie and a salted, one-way hash of your IP address (never the address itself). If you
+          submit an email address (and, optionally, a phone number) through a request form, you are
+          asking us to contact you about that request. See our{" "}
+          <a href="/legal/privacy" className="text-brand-400 hover:underline">Privacy Policy</a> and{" "}
+          <a href="/legal/cookies" className="text-brand-400 hover:underline">Cookie Policy</a> for how
+          this information is used and retained.
         </p>
       </section>
 
