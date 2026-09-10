@@ -50,11 +50,15 @@ export default function WhitepaperPage() {
         <p>
           The MiCA ESMA Assessment Tool takes a crypto-asset whitepaper (PDF upload or direct URL) and
           evaluates it against the mandatory disclosure requirements of Regulation (EU) 2023/1114
-          (&ldquo;MiCA&rdquo;), primarily Article 6 and Annex I, together with selected Level 2 / Level
-          3 technical standards for asset-referenced and e-money tokens. It returns a per-requirement
-          finding set, a weighted completeness score, a compliance flag, an executive narrative, a
-          market-data snapshot for context, and a downloadable PDF report that quotes the whitepaper
-          passages behind each finding.
+          (&ldquo;MiCA&rdquo;) — primarily Article 6 and Annex I — together with the Level 2 and Level
+          3 instruments that implement them: the ESMA regulatory and implementing technical standards
+          and guidelines on whitepaper content and format, the delegated regulations on sustainability
+          indicators and on the crypto-asset classification note, and, for asset-referenced and
+          e-money tokens, the EBA technical standards and guidelines on reserves, own funds, and
+          recovery and redemption planning. It returns a per-requirement finding set, a weighted
+          completeness score, a compliance flag, an executive narrative, a market-data snapshot for
+          context, and a downloadable PDF report that quotes the whitepaper passages behind each
+          finding.
         </p>
         <p className="mt-2">
           It exists as a portfolio demonstration of applied regulatory tooling: a public one-shot free
@@ -81,9 +85,11 @@ export default function WhitepaperPage() {
             sessions; middleware gates the analyst area. The public flow uses no account.
           </li>
           <li className={li}>
-            <span className="text-slate-200">AI:</span> Anthropic&rsquo;s Claude via the official SDK,
-            using tool-use (structured output) for extraction and a short free-text call for the
-            narrative.
+            <span className="text-slate-200">Analysis engine:</span> a large language model (accessed
+            through the Anthropic SDK), driven by a typed tool-use schema for the structured extraction
+            and a short free-text call for the narrative. The regulatory logic — group membership,
+            weights, applicability rules, the no-issuer determination, and scoring — is deterministic
+            code, not the model.
           </li>
           <li className={li}>
             <span className="text-slate-200">Enrichment:</span> CoinGecko (market and developer data),
@@ -107,7 +113,13 @@ export default function WhitepaperPage() {
         <h3 className={h3}>3.1 Thirteen requirement groups</h3>
         <p>
           Annex I and Article 6 are decomposed into 13 groups covering roughly 75 individual
-          disclosure items, each mapped to its specific article or Annex paragraph:
+          disclosure items. Each item is mapped to its specific Level 1 provision (article or Annex
+          paragraph) and, where one exists, to the Level 2 / Level 3 instrument that gives it
+          operative content — the ESMA regulatory and implementing technical standards and guidelines
+          on whitepaper form and content, the delegated regulations on sustainability indicators
+          (methodology and disclosure) and on the classification note, and the EBA technical standards
+          and guidelines that govern reserve composition and liquidity, own-funds adequacy, and
+          recovery and redemption planning for ART and EMT issuers. The 13 groups are:
         </p>
         <ul className="mt-2 space-y-1">
           <li className={li}>Offeror / person seeking admission to trading</li>
@@ -181,7 +193,7 @@ export default function WhitepaperPage() {
           <li>Fetch enrichment in parallel: CoinGecko market data and GLEIF legal-entity matches.</li>
           <li>Scrape the project&rsquo;s own web pages and run a marketing-communications audit for Article 7.</li>
           <li>Extract text from the PDF (falling back to sending the binary document when the PDF is image-only).</li>
-          <li>Run the compliance extraction against Claude, then a separate short call for the executive narrative.</li>
+          <li>Run the compliance extraction through the language model under the tool-use schema, then a separate short call for the executive narrative.</li>
         </ol>
 
         <h3 className={h3}>4.2 Batched, concurrent tool-use</h3>
@@ -190,9 +202,9 @@ export default function WhitepaperPage() {
           stream back — over the serverless function ceiling on the deployment tier. The 13 groups are
           therefore split into four batches of up to four groups and run as concurrent tool-use calls.
           Each call has far less to generate, so wall-clock time drops roughly in proportion to the
-          batch count. The tradeoff is cost: the whitepaper text is sent with every batch, so its
-          input tokens are billed per batch rather than once. A representative run is on the order of
-          75k input + 12k output tokens (~US$0.40) and about 90 seconds end to end.
+          batch count. The tradeoff is token volume: the whitepaper text is sent with every batch, so
+          its input tokens are incurred per batch rather than once. A representative run is on the
+          order of 75k input and 12k output tokens and about 90 seconds end to end.
         </p>
 
         <h3 className={h3}>4.3 Streaming and persistence</h3>
@@ -286,7 +298,7 @@ export default function WhitepaperPage() {
         <p>
           A single tool-use call over all 75 items ran 70–90s against a 60s ceiling. Split into four
           concurrent batched calls of ≤4 groups; wall-clock time dropped roughly 4×, accepting that
-          the whitepaper input is now billed per batch.
+          the whitepaper input is now sent once per batch rather than once per run.
         </p>
 
         <h3 className={h3}>7.3 Batched streaming silently dropped groups</h3>

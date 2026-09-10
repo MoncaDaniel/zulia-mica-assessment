@@ -35,9 +35,10 @@ export default async function Home() {
             Check a token&apos;s whitepaper against MiCA in about 90 seconds
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-slate-400">
-            Upload a crypto-asset whitepaper. Claude assesses it against all 13 groups of MiCA Annex I
-            mandatory disclosures, pulls the token&apos;s market data, and returns a full report —
-            with the exact whitepaper passages behind every finding.
+            Submit a crypto-asset whitepaper. The pipeline evaluates it against all 13 groups of MiCA
+            Annex I mandatory disclosures and the ESMA and EBA regulatory technical standards and
+            guidelines that implement them, cross-references market and legal-entity data, and returns
+            a fully-cited report — every finding bound to the passage it rests on.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
@@ -67,15 +68,15 @@ export default async function Home() {
             {[
               {
                 title: "The full Annex I checklist",
-                body: "Every mandatory disclosure across 13 groups — offeror and issuer identity, offer terms, rights, technology, risk factors, sustainability, reserves and prudential rules — each mapped to its MiCA article.",
+                body: "Every mandatory disclosure across 13 requirement groups — offeror and issuer identity, offer terms, holder rights, technology, risk factors, sustainability, reserves and prudential rules — each bound to its MiCA article and to the ESMA/EBA technical standard or guideline that operationalises it.",
               },
               {
-                title: "Evidence, not just a verdict",
-                body: "Each finding cites the whitepaper passage it rests on, and where a disclosure is missing you see the closest language and why it falls short. Token market data and supply figures included.",
+                title: "Evidence, not a verdict",
+                body: "Every finding carries the verbatim whitepaper passage it rests on; where a disclosure is absent, the closest language in the document and a statement of why it is insufficient. Market, supply and legal-entity context is attached separately.",
               },
               {
-                title: "A downloadable report",
-                body: "The complete assessment as a PDF you can keep or forward — score, per-group breakdown, quoted evidence, tokenomics, and the standing MiCA caveats.",
+                title: "A structured report",
+                body: "The full assessment as a PDF — weighted score, per-group breakdown, quoted evidence under each item, tokenomics, and the standing MiCA and transitional-regime caveats.",
               },
             ].map((c) => (
               <div key={c.title} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
@@ -93,9 +94,9 @@ export default async function Home() {
           </h2>
           <ol className="mt-8 grid gap-6 sm:grid-cols-3">
             {[
-              ["1", "Add the whitepaper", "Paste a direct PDF link or upload the file, with the token name."],
-              ["2", "Watch it analyse", "Findings stream in group by group as Claude reads the document and market data."],
-              ["3", "Download the report", "Get the full PDF once it finishes — about 90 seconds."],
+              ["1", "Submit the whitepaper", "A direct PDF link or an upload, with the token name and ticker."],
+              ["2", "Extraction runs", "Context is retrieved, then the document is processed group by group; findings stream to the page as each group resolves."],
+              ["3", "Retrieve the report", "The full cited PDF is available once extraction completes — roughly 90 seconds."],
             ].map(([n, title, body]) => (
               <li key={n} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
                 <span className="font-display text-2xl font-bold text-brand-500">{n}</span>
@@ -105,62 +106,91 @@ export default async function Home() {
             ))}
           </ol>
 
-          {/* Under the hood — fuller tech + product description */}
+          {/* Under the hood — technical description */}
           <div className="mt-12 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 sm:p-8">
             <h3 className="font-display text-sm font-bold uppercase tracking-widest text-slate-500">
               Under the hood
             </h3>
 
-            <div className="mt-5 space-y-4 text-sm leading-relaxed text-slate-400">
-              <p>
-                <span className="text-slate-200">The compliance model.</span> MiCA Article 6 and
-                Annex I are decomposed into 13 requirement groups and roughly 75 individual disclosure
-                items, each mapped to its specific article or Annex paragraph — offeror and issuer
-                identity, offer terms, holder rights, underlying technology, risk factors,
-                sustainability impacts, and the reserve, prudential, format, prohibited-content and
-                procedural rules. Each group scores as the share of its applicable items that are
-                actually disclosed; the overall score is a fixed-weight average (risk factors and
-                holder rights weigh heaviest), banded into{" "}
-                <span className="text-green-400">PASS</span> (≥ 75%),{" "}
-                <span className="text-amber-400">REVIEW</span> (50–74%) and{" "}
-                <span className="text-red-400">FAIL</span>. A crypto-asset with no identifiable issuer
-                — mined or staked into existence with no treasury or controlling party — is flagged{" "}
-                <span className="text-sky-400">EXEMPT</span> under Article 4(3) / Recital 22 and scored
-                on nothing, because Title II never applied to it.
-              </p>
+            <div className="mt-6 space-y-6 text-sm leading-relaxed text-slate-400">
+              <div>
+                <h4 className="mb-1.5 font-semibold text-slate-200">Regulatory model</h4>
+                <p>
+                  MiCA Article 6 and Annex I are decomposed into 13 requirement groups and
+                  approximately 75 atomic disclosure items. Each item is bound both to its Level 1
+                  provision (article or Annex paragraph) and to the Level 2 / Level 3 instrument that
+                  operationalises it — the ESMA regulatory and implementing technical standards and
+                  guidelines, the delegated regulations on sustainability indicators and on the
+                  crypto-asset classification note, and, for asset-referenced and e-money tokens, the
+                  EBA technical standards and guidelines governing reserve composition and liquidity,
+                  own-funds requirements, and recovery and redemption plans. Group scores are the
+                  ratio of disclosed items to applicable items; the aggregate is a fixed-weight mean
+                  banded into <span className="text-green-400">PASS</span> (≥ 75%),{" "}
+                  <span className="text-amber-400">REVIEW</span> (50–74%) and{" "}
+                  <span className="text-red-400">FAIL</span> (&lt; 50%). Assets with no identifiable
+                  issuer or offeror are resolved to <span className="text-sky-400">EXEMPT</span> under
+                  Article 4(3) and Recital 22 before scoring, since the Title II whitepaper regime
+                  never attached.
+                </p>
+              </div>
 
-              <p>
-                <span className="text-slate-200">The analysis.</span> The whitepaper is read by
-                Anthropic&rsquo;s Claude using structured tool-use, split into four concurrent batched
-                calls so a full run stays inside the serverless time budget (~90 seconds, ~US$0.40 of
-                model usage). It is supplemented with live context — CoinGecko market and developer
-                data, GLEIF legal-entity verification, and a targeted scrape of the project&rsquo;s own
-                site and marketing pages for the Article 7 checks. Every finding carries a status, a
-                verbatim quote from the document (or the closest language, where a disclosure is
-                missing), a confidence value, and a short rationale. Results stream into the page group
-                by group and are saved as they land, so a slow batch never loses earlier work.
-              </p>
+              <div>
+                <h4 className="mb-1.5 font-semibold text-slate-200">Extraction architecture</h4>
+                <p>
+                  The application runs as serverless functions on a Next.js runtime. A typed tool-use
+                  schema constrains a large language model to emit, per disclosure item, a status
+                  (found / not&nbsp;found / not&nbsp;applicable / insufficient), a verbatim excerpt
+                  with a section or page locator, a confidence value, and a rationale. The 13 groups
+                  are partitioned into four batches executed as concurrent inference calls to stay
+                  within the platform function-duration ceiling; partial responses are parsed
+                  incrementally, each group is persisted the moment it resolves and streamed to the
+                  client over Server-Sent Events, and a set-based reconciliation pass guarantees a
+                  group emitted out of order is still captured. A separate short pass produces the
+                  executive narrative; for no-issuer assets that narrative is a deterministic template
+                  rather than a generated one.
+                </p>
+              </div>
 
-              <p>
-                <span className="text-slate-200">The output.</span> A full PDF report — cover,
-                executive summary with the weighted breakdown and a tokenomics table, one page per
-                requirement group with the quoted evidence under each item, and flag-specific next
-                steps. It is automated analysis of the document and public data, not legal advice and
-                not a determination by any regulator.
-              </p>
+              <div>
+                <h4 className="mb-1.5 font-semibold text-slate-200">Context enrichment</h4>
+                <p>
+                  Ahead of extraction the pipeline retrieves and normalises external context: market
+                  and developer metrics from CoinGecko, verified legal-entity records from the GLEIF
+                  LEI registry, and a bounded crawl of the project&rsquo;s own domain, documentation
+                  and marketing surfaces for the Article 7 marketing-communication checks. This
+                  material is presented to the model as separately labelled evidence and is never
+                  permitted to satisfy a disclosure that MiCA requires the whitepaper itself to make.
+                </p>
+              </div>
 
-              <p>
-                <span className="text-slate-200">The free flow.</span> One assessment per visitor, no
-                account. The limit is enforced with a signed cookie backed by a salted hash of the IP
-                (raw addresses are never stored), a global daily cap, and a short throttle; a second
-                run is issued as a single-use link in reply to an email request. The URL-fetch path
-                refuses internal and cloud-metadata addresses and follows no redirects.
-              </p>
+              <div>
+                <h4 className="mb-1.5 font-semibold text-slate-200">Report generation</h4>
+                <p>
+                  The report is rendered server-side to PDF: cover, executive summary with the
+                  weighted breakdown and a tokenomics table, one section per requirement group with
+                  the quoted evidence beneath each item, and flag-specific remediation actions. It is
+                  an automated analysis of the submitted document and public data — not legal advice,
+                  and not a determination by any competent authority.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="mb-1.5 font-semibold text-slate-200">Access controls</h4>
+                <p>
+                  The one-assessment-per-visitor limit is enforced by a signed{" "}
+                  <code>HttpOnly</code> cookie together with a salted, truncated one-way hash of the
+                  client address (IPv6 reduced to its /64 prefix; raw addresses are never stored), a
+                  global daily ceiling, and a per-source rate limit. Additional runs are issued as
+                  single-use, expiring tokens. The whitepaper-URL fetch resolves DNS and rejects
+                  private, loopback, link-local and carrier-grade-NAT ranges and cloud metadata
+                  endpoints, and follows no redirects.
+                </p>
+              </div>
             </div>
 
             <p className="mt-6 text-sm text-slate-400">
-              Full architecture, the assessment model in detail, and the engineering problems solved
-              along the way are in the{" "}
+              The full architecture, the regulatory mapping in detail, and the engineering problems
+              resolved during development are documented in the{" "}
               <Link href="/legal/whitepaper" className="text-brand-400 underline-offset-2 hover:underline">
                 technical whitepaper
               </Link>

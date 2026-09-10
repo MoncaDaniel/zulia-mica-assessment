@@ -62,9 +62,10 @@ export default async function RunPage({
           <>
             <h1 className="font-display text-2xl font-bold text-white">Run a free assessment</h1>
             <p className="mt-2 text-sm text-slate-400">
-              Give the token&apos;s name and its whitepaper. Claude checks it against every MiCA
-              Regulation (EU) 2023/1114 Annex I disclosure requirement and produces a downloadable
-              report with the whitepaper passages behind each finding.
+              Provide the token&apos;s name and its whitepaper. The extraction pipeline evaluates it
+              against every MiCA Regulation (EU) 2023/1114 Annex I disclosure requirement and the
+              implementing ESMA and EBA technical standards and guidelines, and produces a downloadable
+              report with the whitepaper passage behind each finding.
             </p>
             <div className="mt-8">
               <RunForm viaGrant={viaGrant} />
