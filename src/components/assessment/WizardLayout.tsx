@@ -171,11 +171,11 @@ export function WizardLayout({
   };
 
   return (
-    <div className="flex gap-6 h-full">
+    <div className="flex flex-col md:flex-row gap-6 h-full">
       {/* Left: Section nav + score */}
-      <div className="w-64 shrink-0 space-y-6">
+      <div className="w-full md:w-64 md:shrink-0 space-y-4 md:space-y-6">
         <div>
-          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-3">
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-1 md:px-3">
             Sections
           </h2>
           <SectionNav
@@ -185,7 +185,7 @@ export function WizardLayout({
           />
         </div>
 
-        <div className="px-3">
+        <div className="px-1 md:px-3">
           <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
             Score
           </h3>
@@ -211,7 +211,7 @@ export function WizardLayout({
         )}
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl">
-          <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="px-4 sm:px-6 py-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-semibold text-white">
                 {currentStep + 1}. {currentSection.label}
@@ -227,7 +227,7 @@ export function WizardLayout({
             </div>
           </div>
 
-          <div className="px-6 py-6">
+          <div className="px-4 sm:px-6 py-4 sm:py-6">
             {SECTION_FORMS[currentSection.key]}
           </div>
         </div>
@@ -241,6 +241,7 @@ export function WizardLayout({
               disabled={!allSectionsComplete}
               onClick={handleSubmit}
               title={!allSectionsComplete ? "Complete all sections before submitting" : undefined}
+              className="w-full sm:w-auto"
             >
               Submit for Review
             </Button>

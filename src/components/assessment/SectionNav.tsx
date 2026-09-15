@@ -11,7 +11,7 @@ interface SectionNavProps {
 
 export function SectionNav({ currentStep, completedSections, onNavigate }: SectionNavProps) {
   return (
-    <nav className="space-y-1">
+    <nav className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 md:mx-0 md:px-0 md:flex-col md:gap-0 md:space-y-1 md:overflow-visible md:pb-0">
       {SECTION_DEFINITIONS.map((section, idx) => {
         const isComplete = completedSections.has(section.key);
         const isCurrent = idx === currentStep;
@@ -22,7 +22,7 @@ export function SectionNav({ currentStep, completedSections, onNavigate }: Secti
             type="button"
             onClick={() => onNavigate(idx)}
             className={cn(
-              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-colors",
+              "flex-shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 py-2 md:py-2.5 rounded-lg text-left text-sm transition-colors whitespace-nowrap md:whitespace-normal",
               isCurrent
                 ? "bg-brand-500/20 text-brand-300 font-medium"
                 : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
@@ -40,7 +40,7 @@ export function SectionNav({ currentStep, completedSections, onNavigate }: Secti
             >
               {isComplete ? "✓" : idx + 1}
             </span>
-            <span className="truncate">{section.label}</span>
+            <span className="md:truncate">{section.label}</span>
           </button>
         );
       })}

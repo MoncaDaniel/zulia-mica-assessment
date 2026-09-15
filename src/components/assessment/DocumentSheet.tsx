@@ -259,14 +259,14 @@ function FinancialCard({ f }: { f: CoinFinancials }) {
     n === null ? "—" : n >= 1e9 ? `${(n / 1e9).toFixed(2)}B` : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n.toLocaleString();
 
   return (
-    <div className="mt-4 mb-6 p-4 bg-stone-50 border border-stone-200 rounded-sm">
+    <div className="mt-4 mb-6 p-3 sm:p-4 bg-stone-50 border border-stone-200 rounded-sm">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
+        <div className="min-w-0">
           <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400 mb-1">
             Market Data · CoinGecko
           </p>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-stone-900">{f.name}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-bold text-stone-900 break-words">{f.name}</span>
             <span className="text-xs text-stone-500 font-mono">{f.symbol}</span>
             {f.market_cap_rank && (
               <span className="text-[10px] bg-stone-200 text-stone-600 px-1.5 py-0.5 rounded font-mono">
@@ -295,16 +295,16 @@ function FinancialCard({ f }: { f: CoinFinancials }) {
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3">
         {[
           { label: "Market Cap",    value: fmtM(f.market_cap_usd) },
           { label: "24h Volume",    value: fmtM(f.volume_24h_usd) },
           { label: "Circ. Supply",  value: fmtN(f.circulating_supply) },
           { label: "Max Supply",    value: f.max_supply ? fmtN(f.max_supply) : "Unlimited" },
         ].map(({ label, value }) => (
-          <div key={label}>
-            <p className="text-[10px] text-stone-400 uppercase tracking-wider">{label}</p>
-            <p className="text-xs font-semibold text-stone-700 mt-0.5">{value}</p>
+          <div key={label} className="min-w-0">
+            <p className="text-[10px] text-stone-400 uppercase tracking-wider truncate">{label}</p>
+            <p className="text-xs font-semibold text-stone-700 mt-0.5 truncate">{value}</p>
           </div>
         ))}
       </div>
@@ -543,9 +543,9 @@ export function DocumentSheet({
   const isRunning = aiStatus === "NONE" || aiStatus === "PENDING";
 
   return (
-    <div className="py-8 px-4">
+    <div className="py-4 sm:py-8 px-0 sm:px-4">
       <div
-        className="max-w-[860px] mx-auto bg-white rounded-sm"
+        className="max-w-[860px] mx-auto bg-white rounded-none sm:rounded-sm"
         style={{ boxShadow: "0 4px 32px rgba(0,0,0,0.13), 0 1px 4px rgba(0,0,0,0.06)" }}
       >
         {/* Progress rail */}
@@ -558,19 +558,19 @@ export function DocumentSheet({
           </div>
         )}
 
-        <div className="px-14 py-12">
+        <div className="px-4 sm:px-8 md:px-14 py-6 sm:py-9 md:py-12">
           {/* Document header */}
           <div className="border-b-2 border-stone-900 pb-6 mb-2">
             <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-stone-400 mb-4">
               Regulation (EU) 2023/1114 · MiCA Compliance Assessment
             </p>
 
-            <div className="flex items-start justify-between gap-6">
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-stone-900 font-display leading-tight">
+            <div className="flex flex-wrap items-start justify-between gap-4 sm:gap-6">
+              <div className="flex-1 min-w-[60%]">
+                <h1 className="text-xl sm:text-2xl font-bold text-stone-900 font-display leading-tight break-words">
                   {tokenName}
                 </h1>
-                <div className="mt-2 flex items-center gap-4 flex-wrap text-xs text-stone-500">
+                <div className="mt-2 flex items-center gap-3 sm:gap-4 flex-wrap text-xs text-stone-500">
                   {pdfName && (
                     <span className="flex items-center gap-1">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

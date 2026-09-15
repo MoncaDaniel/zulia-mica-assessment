@@ -10,7 +10,12 @@ const NAV_ITEMS = [
   { href: "/assessments/new", label: "New Assessment", icon: "+" },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const navItems =
@@ -19,18 +24,36 @@ export function Sidebar() {
       : NAV_ITEMS;
 
   return (
-    <aside className="w-60 shrink-0 bg-slate-950 border-r border-slate-800 flex flex-col h-screen sticky top-0">
-      <div className="px-6 py-5 border-b border-slate-800">
-        <span className="font-display font-bold text-lg text-white">MiCA</span>
-        <span className="text-brand-500 font-bold text-lg"> ESMA</span>
-        <p className="text-xs text-slate-500 mt-0.5">Assessment Tool</p>
+    <aside
+      className={cn(
+        "w-60 shrink-0 bg-slate-950 border-r border-slate-800 flex flex-col h-screen",
+        "fixed top-0 left-0 z-40 transition-transform duration-200 ease-out",
+        "md:sticky md:translate-x-0",
+        mobileOpen ? "translate-x-0" : "-translate-x-full",
+      )}
+    >
+      <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <span className="font-display font-bold text-lg text-white">MiCA</span>
+          <span className="text-brand-500 font-bold text-lg"> ESMA</span>
+          <p className="text-xs text-slate-500 mt-0.5">Assessment Tool</p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close menu"
+          className="md:hidden text-slate-500 hover:text-slate-200 text-xl leading-none px-1"
+        >
+          ✕
+        </button>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
+            onClick={onClose}
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
               pathname === item.href || pathname.startsWith(item.href + "/")

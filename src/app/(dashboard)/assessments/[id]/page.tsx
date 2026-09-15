@@ -46,19 +46,21 @@ export default async function AssessmentPage({ params }: Props) {
   }
 
   return (
-    // Full-bleed layout — override the default p-6 with negative margin trick
-    <div className="-m-6">
+    // Full-bleed layout — override the default responsive p-4/p-6 with a matching negative margin
+    <div className="-m-4 sm:-m-6">
       {/* Thin top bar */}
-      <div className="px-6 py-3 border-b border-slate-800 flex items-center gap-4 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
-        <Link href="/dashboard" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+      <div className="px-4 sm:px-6 py-3 border-b border-slate-800 flex items-center gap-3 sm:gap-4 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
+        <Link href="/dashboard" className="shrink-0 text-slate-500 hover:text-slate-300 text-sm transition-colors">
           ← Dashboard
         </Link>
-        <span className="text-slate-700 text-sm">/</span>
-        <span className="text-slate-300 text-sm font-medium truncate">{assessment.tokenName}</span>
-        {assessment.ticker && (
-          <span className="text-slate-500 text-xs">{assessment.ticker}</span>
-        )}
-        <div className="ml-auto flex items-center gap-2">
+        <span className="hidden sm:inline text-slate-700 text-sm">/</span>
+        <span className="min-w-0 flex-1 flex items-center gap-2 overflow-hidden">
+          <span className="text-slate-300 text-sm font-medium truncate">{assessment.tokenName}</span>
+          {assessment.ticker && (
+            <span className="shrink-0 text-slate-500 text-xs">{assessment.ticker}</span>
+          )}
+        </span>
+        <div className="ml-auto flex items-center gap-2 shrink-0">
           {canSubmit && <SubmitButton assessmentId={params.id} />}
           {assessment.status === "APPROVED" && (
             <a href={`/api/assessments/${params.id}/export`} target="_blank" rel="noreferrer">

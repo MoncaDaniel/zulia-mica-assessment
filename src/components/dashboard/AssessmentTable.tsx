@@ -112,7 +112,92 @@ export function AssessmentTable({ assessments, userRole, onDelete }: AssessmentT
           <p className="text-sm mt-1">Try a different token name, ticker, or status filter</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <>
+          {/* Mobile card list */}
+          <div className="sm:hidden space-y-3">
+            {filtered.map((a) => {
+              const completedCount = a.sections.filter((s) => s.completedAt).length;
+              const progressPct = Math.round((completedCount / MICA_GROUPS.length) * 100);
+              const listedPublicly = listedOverrides[a.id] ?? a.listedPublicly;
+
+              return (
+                <div key={a.id} className="bg-slate-800/40 border border-slate-800 rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <Link href={`/assessments/${a.id}`} className="min-w-0">
+                      <p className="font-medium text-white truncate">{a.tokenName}</p>
+                      {a.ticker && <p className="text-xs text-slate-500">{a.ticker}</p>}
+                    </Link>
+                    <FlagBadge flag={a.flag} />
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <StatusBadge status={a.status} />
+                    <span className={cn("text-xs font-semibold font-display", scoreToColor(a.overallScore))}>
+                      {formatScore(a.overallScore)}
+                    </span>
+                    {a.status === "APPROVED" && (
+                      listedPublicly
+                        ? <span className="text-xs text-brand-400">🔓 Public</span>
+                        : <span className="text-xs text-slate-600">🔒 Private</span>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-brand-500 rounded-full transition-all"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-slate-500 shrink-0">{completedCount}/{MICA_GROUPS.length}</span>
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+                    <span className="truncate">{a.createdBy.name}</span>
+                    <span className="shrink-0">{formatDate(a.createdAt)}</span>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    <Link href={`/assessments/${a.id}`} className="flex-1">
+                      <Button variant="ghost" size="sm" className="w-full">View</Button>
+                    </Link>
+                    {(a.status === "APPROVED" || a.status === "SUBMITTED") && (
+                      <a href={`/api/assessments/${a.id}/export`} target="_blank" rel="noreferrer" className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">PDF</Button>
+                      </a>
+                    )}
+                    {a.status === "APPROVED" && canManageRegistry && (
+                      <button
+                        onClick={() => handleToggleRegistry(a.id, !listedPublicly)}
+                        disabled={togglingRegistry === a.id}
+                        className={cn(
+                          "px-2.5 py-1.5 rounded-full text-xs font-medium border transition-colors disabled:opacity-50",
+                          listedPublicly
+                            ? "bg-brand-500/20 text-brand-400 border-brand-500/40"
+                            : "bg-slate-800 text-slate-500 border-slate-700"
+                        )}
+                      >
+                        {listedPublicly ? "🔓" : "🔒"}
+                      </button>
+                    )}
+                    {userRole === "ADMIN" && (
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        loading={deleting === a.id}
+                        onClick={() => handleDelete(a.id)}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-800 text-left">
@@ -221,7 +306,8 @@ export function AssessmentTable({ assessments, userRole, onDelete }: AssessmentT
               })}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

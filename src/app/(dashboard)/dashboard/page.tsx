@@ -31,17 +31,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-display text-white">Assessments</h1>
           <p className="text-slate-400 text-sm mt-1">MiCA token compliance assessments</p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/check" target="_blank" rel="noreferrer">
-            <Button variant="outline" size="md">🔎 Public registry</Button>
+          <Link href="/check" target="_blank" rel="noreferrer" className="flex-1 sm:flex-initial">
+            <Button variant="outline" size="md" className="w-full sm:w-auto">🔎 Public registry</Button>
           </Link>
-          <Link href="/assessments/new">
-            <Button variant="primary" size="md">
+          <Link href="/assessments/new" className="flex-1 sm:flex-initial">
+            <Button variant="primary" size="md" className="w-full sm:w-auto">
               + New Assessment
             </Button>
           </Link>
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3 sm:gap-4">
         {[
           { label: "Total", value: stats.total, color: "text-slate-300" },
           { label: "Pass", value: stats.pass, color: "text-green-400" },
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
           { label: "Awaiting Review", value: stats.submitted, color: "text-blue-400" },
           { label: "In Public Registry", value: stats.listed, color: "text-brand-500" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+          <div key={stat.label} className="bg-slate-900 border border-slate-800 rounded-xl p-3 sm:p-4 text-center">
             <p className={cn("text-2xl font-bold font-display", stat.color)}>{stat.value}</p>
             <p className="text-xs text-slate-500 mt-1">{stat.label}</p>
           </div>
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-6">
         <AssessmentTable
           assessments={assessments.map((a) => ({
             ...a,
