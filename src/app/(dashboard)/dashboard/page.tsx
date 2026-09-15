@@ -34,7 +34,10 @@ export default async function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-display text-white">Assessments</h1>
-          <p className="text-slate-400 text-sm mt-1">MiCA token compliance assessments</p>
+          <p className="text-slate-400 text-sm mt-1">
+            Each assessment is checked against all 13 MiCA Annex I disclosure groups (~75 items) —
+            the numbers below are your team&rsquo;s live compliance KPIs.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/check" target="_blank" rel="noreferrer" className="flex-1 sm:flex-initial">

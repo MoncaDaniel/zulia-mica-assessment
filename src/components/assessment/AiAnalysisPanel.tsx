@@ -205,7 +205,7 @@ export function AiAnalysisPanel({
           </p>
           {panelStatus === "idle" && !expanded && (
             <p className="text-xs text-slate-600 mt-0.5">
-              Claude prefills all {AI_SECTIONS.length} sections · you review &amp; correct
+              AI prefills all {AI_SECTIONS.length} sections · you review &amp; correct
             </p>
           )}
           {isRunning && (
@@ -360,7 +360,7 @@ export function AiAnalysisPanel({
                   Analyse Whitepaper
                 </button>
                 <span className="text-xs text-slate-600">
-                  ~20 s · Claude prefills all fields · you review
+                  ~20 s · AI prefills all fields · you review
                 </span>
               </div>
             </div>

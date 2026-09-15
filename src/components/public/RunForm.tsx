@@ -130,6 +130,14 @@ export function RunForm({ viaGrant }: { viaGrant?: boolean }) {
           </div>
         </div>
 
+        <p className="mb-3 text-xs leading-relaxed text-slate-500">
+          💡 A whitepaper is the document a crypto-asset&rsquo;s issuer publishes describing the
+          project, the token, and its risks — MiCA requires one for most public offers. Don&rsquo;t
+          have it on hand? Search &ldquo;{tokenName.trim() || "the token name"} whitepaper&rdquo; in any
+          search engine, open the issuer&rsquo;s own page, then either download the PDF and upload it
+          here, or copy its URL and paste it below.
+        </p>
+
         {mode === "url" ? (
           <div>
             <input

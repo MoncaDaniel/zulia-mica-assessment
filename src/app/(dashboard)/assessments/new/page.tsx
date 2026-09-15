@@ -61,7 +61,9 @@ export default function NewAssessmentPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold font-display text-white">New Assessment</h1>
         <p className="text-slate-400 text-sm mt-1">
-          Upload a whitepaper PDF, or paste a link to one — Claude will assess it against all MiCA disclosure requirements.
+          Upload a whitepaper PDF, or paste a link to one. The extraction pipeline checks it against
+          all 13 MiCA Annex I disclosure groups (~75 individual items) and cites the exact passage
+          behind every finding — you review and correct before anything is scored.
         </p>
       </div>
 
@@ -124,6 +126,14 @@ export default function NewAssessmentPage() {
               </button>
             </div>
           </div>
+
+          <p className="mb-3 text-xs leading-relaxed text-slate-500">
+            💡 A whitepaper is the document a crypto-asset&rsquo;s issuer publishes describing the
+            project, the token, and its risks — MiCA requires one for most public offers. Don&rsquo;t
+            have it on hand? Search &ldquo;{tokenName.trim() || "the token name"} whitepaper&rdquo; in
+            any search engine, open the issuer&rsquo;s own page, then either download the PDF and
+            upload it here, or copy its URL and paste it below.
+          </p>
 
           {mode === "url" ? (
             <div>
