@@ -8,7 +8,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           <Link href="/" className="font-display font-bold text-lg text-white">
             MiCA <span className="text-brand-500">ESMA</span>
           </Link>
-          <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
+          <Link href="/check" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
             ← Back to registry
           </Link>
         </div>
