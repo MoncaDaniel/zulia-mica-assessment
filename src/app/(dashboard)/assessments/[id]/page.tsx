@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { DocumentSheet } from "@/components/assessment/DocumentSheet";
 import ReviewActions from "./ReviewActions";
 import SubmitButton from "./SubmitButton";
+import { RegistryControls } from "./RegistryControls";
 import type { MicaGroupData } from "@/lib/ai/types";
 import type { CoinFinancials } from "@/lib/ai/coin-data";
 import Link from "next/link";
@@ -35,6 +36,10 @@ export default async function AssessmentPage({ params }: Props) {
   const canSubmit =
     (assessment.status === "DRAFT" || assessment.status === "REJECTED") &&
     assessment.aiStatus === "COMPLETED";
+
+  const canManageRegistry =
+    assessment.status === "APPROVED" &&
+    (session.user.role === "REVIEWER" || session.user.role === "ADMIN");
 
   // Reconstruct group data from DB sections
   const initialGroups: Partial<Record<string, MicaGroupData>> = {};
@@ -78,6 +83,16 @@ export default async function AssessmentPage({ params }: Props) {
             Pending review
           </p>
           <ReviewActions assessmentId={params.id} />
+        </div>
+      )}
+
+      {canManageRegistry && (
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-800">
+          <RegistryControls
+            assessmentId={params.id}
+            initialListed={assessment.listedPublicly}
+            initialPdfEnabled={assessment.publicPdfEnabled}
+          />
         </div>
       )}
 

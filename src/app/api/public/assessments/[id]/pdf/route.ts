@@ -6,11 +6,16 @@ import { generateAssessmentPDF } from "@/lib/pdf";
 import { getPublicUserId } from "@/lib/anon";
 
 /**
- * GET /api/public/assessments/[id]/pdf — the full downloadable report for a
- * free/public assessment. Ungated on purpose: giving away one complete,
- * quote-rich PDF is the whole point of the free flow. Still restricted to
- * assessments owned by the public system user, and only once analysis has
- * finished.
+ * GET /api/public/assessments/[id]/pdf — the full downloadable report,
+ * reachable two different ways:
+ *   1. The free/public assessment flow — ungated on purpose, giving away
+ *      one complete, quote-rich PDF is the whole point. Gated only on the
+ *      assessment being owned by the public system user.
+ *   2. A staff-reviewed assessment from the registry — gated on BOTH
+ *      listedPublicly AND the separate publicPdfEnabled opt-in (see the
+ *      field comment in schema.prisma). Neither flag alone is enough:
+ *      listing a token never implies its report is downloadable.
+ * Either way, only once analysis has finished.
  */
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const publicUserId = await getPublicUserId();
@@ -25,8 +30,15 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   });
 
   if (!assessment) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (assessment.createdById !== publicUserId) {
-    return NextResponse.json({ error: "Not a public assessment" }, { status: 403 });
+
+  const isPublicFlowAssessment = assessment.createdById === publicUserId;
+  const isDownloadableRegistryListing =
+    assessment.status === "APPROVED" &&
+    assessment.listedPublicly === true &&
+    assessment.publicPdfEnabled === true;
+
+  if (!isPublicFlowAssessment && !isDownloadableRegistryListing) {
+    return NextResponse.json({ error: "This report isn't publicly available" }, { status: 403 });
   }
   if (assessment.aiStatus !== "COMPLETED") {
     return NextResponse.json(

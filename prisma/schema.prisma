@@ -101,6 +101,15 @@ model Assessment {
   // exposes a confidential client engagement just by finishing a review.
   listedPublicly Boolean @default(false)
 
+  // A second, separate opt-in — NOT implied by listedPublicly. Only once
+  // both this and listedPublicly are true does the full report (score,
+  // reviewer notes, analyst identity, whitepaper-derived findings) become
+  // downloadable by anyone via /api/public/assessments/[id]/pdf. Set
+  // exclusively via the same /registry route, which forces this back to
+  // false whenever listedPublicly is turned off, so a report can never
+  // stay silently downloadable after a token is unlisted.
+  publicPdfEnabled Boolean @default(false)
+
   // AI layer
   aiStatus      String           @default("NONE")   // NONE | PENDING | COMPLETED | FAILED
   aiNarrative   String?          @db.Text

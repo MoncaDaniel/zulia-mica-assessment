@@ -7,10 +7,14 @@ import { prisma } from "@/lib/prisma";
 //   1. DB filter: only APPROVED assessments an analyst has explicitly opted
 //      into the registry (listedPublicly: true) are even eligible.
 //   2. Field selection: token facts + flag + a truncated narrative teaser
-//      are all that's ever selected here — exact score, reviewer notes,
-//      analyst identity, the full whitepaper-derived narrative, and the PDF
-//      itself never leave the DB for this route. The modal's "full report"
-//      stays genuinely gated behind the contact form.
+//      (plus the id, needed to link a download) are all that's ever
+//      selected here — exact score, reviewer notes, analyst identity, and
+//      the full whitepaper-derived narrative never leave the DB via this
+//      route. The `id` on its own reveals nothing: the download route
+//      (/api/public/assessments/[id]/pdf) independently re-checks
+//      listedPublicly AND publicPdfEnabled before ever generating a PDF, so
+//      an id alone can't be used to pull a report that isn't both listed
+//      and explicitly marked downloadable.
 // `q` is optional: omitted (or blank) returns the full public list — the
 // list itself is the landing page, search is just a filter on top of it.
 const MAX_QUERY_LENGTH = 100;
@@ -47,11 +51,13 @@ export async function GET(req: NextRequest) {
         : {}),
     },
     select: {
+      id: true,
       tokenName: true,
       ticker: true,
       flag: true,
       updatedAt: true,
       aiNarrative: true,
+      publicPdfEnabled: true,
       sections: {
         where: { sectionKey: "s01_general_info" },
         select: { data: true },
@@ -66,6 +72,7 @@ export async function GET(req: NextRequest) {
     results: results.map((r) => {
       const general = (r.sections[0]?.data ?? {}) as Record<string, unknown>;
       return {
+        id: r.id,
         tokenName: r.tokenName,
         ticker: r.ticker,
         flag: r.flag,
@@ -74,6 +81,7 @@ export async function GET(req: NextRequest) {
         classification:
           typeof general.tokenClassification === "string" ? general.tokenClassification || null : null,
         teaser: teaser(r.aiNarrative),
+        canDownload: r.publicPdfEnabled,
       };
     }),
   });

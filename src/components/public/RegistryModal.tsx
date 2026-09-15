@@ -7,6 +7,7 @@ import { FlagBadge } from "@/components/dashboard/StatusBadge";
 import { formatDate } from "@/lib/utils";
 
 export interface RegistryHit {
+  id: string;
   tokenName: string;
   ticker: string | null;
   flag: string | null;
@@ -14,6 +15,7 @@ export interface RegistryHit {
   chain: string | null;
   classification: string | null;
   teaser: string | null;
+  canDownload: boolean;
 }
 
 // Two modes: a listed token (shows the preview panel above the form) or a
@@ -32,6 +34,11 @@ export function RegistryModal({ token, defaultTokenName, onClose }: RegistryModa
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  // A downloadable token opens straight to the download action; the
+  // contact form is tucked behind an extra click rather than shown by
+  // default. Anything else (not yet PDF-enabled, or no token match at all)
+  // shows the contact form immediately, same as before.
+  const [showContactForm, setShowContactForm] = useState(!token?.canDownload);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,11 +66,11 @@ export function RegistryModal({ token, defaultTokenName, onClose }: RegistryModa
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
+      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4 py-8"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6"
+        className="w-full max-w-md max-h-full overflow-y-auto bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between mb-4">
@@ -102,6 +109,22 @@ export function RegistryModal({ token, defaultTokenName, onClose }: RegistryModa
               Close
             </Button>
           </div>
+        ) : token?.canDownload && !showContactForm ? (
+          <div className="space-y-3">
+            <a
+              href={`/api/public/assessments/${token.id}/pdf`}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-4 py-3 sm:py-2.5 transition-colors"
+            >
+              ↓ Download full PDF
+            </a>
+            <button
+              type="button"
+              onClick={() => setShowContactForm(true)}
+              className="w-full text-center text-xs text-slate-500 hover:text-slate-300 transition-colors py-1"
+            >
+              Want to discuss this token, or request a different one? Get in touch
+            </button>
+          </div>
         ) : (
           <>
             <p className="text-sm text-slate-400 mb-4">
@@ -139,6 +162,15 @@ export function RegistryModal({ token, defaultTokenName, onClose }: RegistryModa
               <Button type="submit" variant="primary" size="md" loading={submitting} className="w-full">
                 Send
               </Button>
+              {token?.canDownload && (
+                <button
+                  type="button"
+                  onClick={() => setShowContactForm(false)}
+                  className="w-full text-center text-xs text-slate-500 hover:text-slate-300 transition-colors py-1"
+                >
+                  ← Back to download
+                </button>
+              )}
             </form>
           </>
         )}
