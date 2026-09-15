@@ -119,15 +119,19 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## Demo Accounts (seeded, local dev only)
+## Demo Accounts (seeded)
 
 | Email | Password | Role |
 |---|---|---|
 | analyst@mica-esma.tool | password123 | ANALYST |
 | reviewer@mica-esma.tool | password123 | REVIEWER |
-| admin@mica-esma.tool | password123 | ADMIN |
 
-**Change these before any real deployment** — they exist purely to let a local `npm run dev` instance be explored end-to-end.
+These two roles can't see anything sensitive (no access to the leads inbox), so their seeded password is
+intentionally published for anyone exploring the demo. The seeded ADMIN account's password is **not**
+published here or anywhere in this repo — ADMIN can read real contact details submitted through the
+public site's lead-request form, so its credential lives only in the production database, set out of
+band. If you're running this locally against your own database, `prisma/seed.ts` will create an ADMIN
+user for you with a random password each time — check the seed script's console output.
 
 ---
 

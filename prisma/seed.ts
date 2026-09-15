@@ -1,10 +1,17 @@
 import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import crypto from "node:crypto";
 
 const prisma = new PrismaClient();
 
 async function main() {
   const passwordHash = await bcrypt.hash("password123", 12);
+
+  // ADMIN can see real contact details from the public lead-request form, so
+  // it never gets the shared "password123" — a fresh, unpublished password
+  // is generated on each seed run (or set ADMIN_SEED_PASSWORD yourself).
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD ?? crypto.randomBytes(18).toString("base64url");
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 12);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@mica-esma.tool" },
@@ -12,10 +19,13 @@ async function main() {
     create: {
       name: "Guest Admin",
       email: "admin@mica-esma.tool",
-      password: passwordHash,
+      password: adminPasswordHash,
       role: Role.ADMIN,
     },
   });
+  if (!process.env.ADMIN_SEED_PASSWORD) {
+    console.log(`Generated ADMIN password for ${admin.email}: ${adminPassword}`);
+  }
 
   const analyst = await prisma.user.upsert({
     where: { email: "analyst@mica-esma.tool" },

@@ -76,7 +76,9 @@ export default function LoginPage() {
             <p className="font-medium text-slate-300">Demo accounts:</p>
             <p>analyst@mica-esma.tool / password123</p>
             <p>reviewer@mica-esma.tool / password123</p>
-            <p>admin@mica-esma.tool / password123</p>
+            <p className="text-slate-600">
+              Admin access (leads inbox) isn&apos;t published here — get in touch for a demo.
+            </p>
           </div>
         </div>
       </div>
